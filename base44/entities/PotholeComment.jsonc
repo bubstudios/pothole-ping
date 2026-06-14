@@ -1,0 +1,22 @@
+{
+  "name": "PotholeComment",
+  "type": "object",
+  "properties": {
+    "pothole_id": {
+      "type": "string",
+      "description": "ID of the pothole report this comment belongs to"
+    },
+    "text": {
+      "type": "string",
+      "description": "Comment text"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the commenter"
+    }
+  },
+  "required": [
+    "pothole_id",
+    "text"
+  ]
+}

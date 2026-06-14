@@ -1,0 +1,141 @@
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+const severityColors = {
+  minor: '#f59e0b',
+  moderate: '#f97316',
+  severe: '#ef4444',
+  dangerous: '#991b1b',
+};
+
+const statusIcons = {
+  reported: '🔴',
+  acknowledged: '🟡',
+  in_progress: '🟠',
+  fixed: '🟢',
+};
+
+function createPotholeIcon(severity, status) {
+  const color = severityColors[severity] || '#f97316';
+  const emoji = statusIcons[status] || '🔴';
+  return L.divIcon({
+    className: 'custom-pothole-marker',
+    html: `<div style="
+      width: 32px; height: 32px; border-radius: 50%;
+      background: ${color}; border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; cursor: pointer;
+    ">${emoji}</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -18],
+  });
+}
+
+const newPinIcon = L.divIcon({
+  className: 'new-pin-marker',
+  html: `<div style="
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #f97316; border: 4px solid white;
+    box-shadow: 0 0 0 4px rgba(249,115,22,0.3), 0 4px 12px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; animation: pulse 1.5s infinite;
+  ">📍</div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+});
+
+function MapClickHandler({ onMapClick, isDropping }) {
+  useMapEvents({
+    click(e) {
+      if (isDropping) {
+        onMapClick(e.latlng);
+      }
+    },
+  });
+  return null;
+}
+
+function FlyToLocation({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, 15, { duration: 1 });
+    }
+  }, [center, map]);
+  return null;
+}
+
+export default function PotholeMap({
+  potholes = [],
+  onMapClick,
+  newPin,
+  isDropping,
+  onPotholeClick,
+  flyToCenter,
+}) {
+  const defaultCenter = [38.7, -90.3]; // STL area
+
+  return (
+    <div className="w-full h-full relative">
+      <MapContainer
+        center={defaultCenter}
+        zoom={11}
+        className="w-full h-full"
+        style={{ zIndex: 0 }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapClickHandler onMapClick={onMapClick} isDropping={isDropping} />
+        {flyToCenter && <FlyToLocation center={flyToCenter} />}
+
+        {potholes.map((p) => (
+          <Marker
+            key={p.id}
+            position={[p.latitude, p.longitude]}
+            icon={createPotholeIcon(p.severity, p.status)}
+            eventHandlers={{ click: () => onPotholeClick?.(p) }}
+          >
+            <Popup>
+              <div className="text-sm min-w-[180px]">
+                <p className="font-semibold">{p.address || 'Unknown location'}</p>
+                <p className="text-xs text-gray-500 capitalize mt-1">
+                  {p.severity} · {p.status}
+                </p>
+                {p.jurisdiction_name && (
+                  <p className="text-xs mt-1">📞 {p.jurisdiction_name}</p>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {newPin && (
+          <Marker position={[newPin.lat, newPin.lng]} icon={newPinIcon}>
+            <Popup>
+              <p className="text-sm font-medium">New pothole report</p>
+            </Popup>
+          </Marker>
+        )}
+      </MapContainer>
+
+      {isDropping && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg font-heading font-semibold text-sm animate-bounce">
+          👆 Tap the map to drop a pin
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+        }
+      `}</style>
+    </div>
+  );
+}

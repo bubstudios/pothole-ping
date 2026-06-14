@@ -1,0 +1,78 @@
+{
+  "name": "PotholeReport",
+  "type": "object",
+  "properties": {
+    "latitude": {
+      "type": "number",
+      "description": "Latitude of the pothole"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Longitude of the pothole"
+    },
+    "address": {
+      "type": "string",
+      "description": "Human-readable address or intersection"
+    },
+    "description": {
+      "type": "string",
+      "description": "Details about the pothole - lane, size, severity"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "minor",
+        "moderate",
+        "severe",
+        "dangerous"
+      ],
+      "default": "moderate"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "reported",
+        "acknowledged",
+        "in_progress",
+        "fixed"
+      ],
+      "default": "reported"
+    },
+    "jurisdiction_name": {
+      "type": "string",
+      "description": "Name of the responsible municipality or authority"
+    },
+    "jurisdiction_type": {
+      "type": "string",
+      "enum": [
+        "city",
+        "county",
+        "state",
+        "federal",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "jurisdiction_phone": {
+      "type": "string",
+      "description": "Phone number to call to report the pothole"
+    },
+    "jurisdiction_details": {
+      "type": "string",
+      "description": "Additional info about who to contact and why"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Optional photo of the pothole"
+    },
+    "upvotes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of people who confirmed this pothole"
+    }
+  },
+  "required": [
+    "latitude",
+    "longitude"
+  ]
+}
