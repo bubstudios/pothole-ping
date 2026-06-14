@@ -85,7 +85,7 @@ export default function Home() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  const DUPE_THRESHOLD_FT = 50;
+  const DUPE_THRESHOLD_FT = 100;
 
   const openReportAt = useCallback(async (lat, lng) => {
     // Duplicate check: is there an unfixed pothole within 50ft?
@@ -364,7 +364,7 @@ export default function Home() {
                 timeRange={heatmapTimeRange}
               />
             </PotholeMap>
-            <HeatmapControls
+            {!sidebarOpen && <HeatmapControls
               enabled={heatmapEnabled}
               onToggle={() => setHeatmapEnabled(!heatmapEnabled)}
               severityFilter={heatmapSeverity}
@@ -378,7 +378,7 @@ export default function Home() {
                 const age = (Date.now() - new Date(p.created_date).getTime()) / (24*60*60*1000);
                 return age <= timeCutoffs[heatmapTimeRange];
               }).length : 0}
-            />
+            />}
           </div>
         )}
 
