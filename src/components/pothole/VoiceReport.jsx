@@ -95,7 +95,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       )}
       {status === 'triggered' && (
         <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 shadow-lg text-xs text-green-700 font-medium">
-          Pin dropped! Fill in the details.
+          Pin dropped! Tap it to add details.
         </div>
       )}
       {status === 'error' && error && (

@@ -154,11 +154,22 @@ export default function Home() {
     openReportAt(latlng.lat, latlng.lng);
   }, [isDropping, openReportAt]);
 
-  const handleVoiceReport = useCallback(async (lat, lng) => {
+  const handleVoiceReport = useCallback((lat, lng) => {
     setIsVoiceListening(false);
     setIsDropping(false);
-    openReportAt(lat, lng);
-  }, [openReportAt]);
+    setNewPin({ lat, lng });
+    setSelectedPothole(null);
+    setDuplicateCandidate(null);
+    setSidebarOpen(false);
+    setFlyToCenter([lat, lng]);
+    setJurisdictionInfo(null);
+    setIsLoadingJurisdiction(false);
+  }, []);
+
+  const handleNewPinClick = useCallback(() => {
+    if (!newPin) return;
+    openReportAt(newPin.lat, newPin.lng);
+  }, [newPin, openReportAt]);
 
   const handleSubmitReport = async ({ description, severity, photo_url }) => {
     const report = {
@@ -444,6 +455,7 @@ export default function Home() {
               newPin={newPin}
               isDropping={isDropping}
               onPotholeClick={handlePotholeClick}
+              onNewPinClick={handleNewPinClick}
               flyToCenter={flyToCenter}
             >
               <HeatmapLayer

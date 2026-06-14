@@ -87,6 +87,7 @@ export default function PotholeMap({
   newPin,
   isDropping,
   onPotholeClick,
+  onNewPinClick,
   flyToCenter,
   children,
 }) {
@@ -129,11 +130,11 @@ export default function PotholeMap({
         ))}
 
         {newPin && (
-          <Marker position={[newPin.lat, newPin.lng]} icon={newPinIcon}>
-            <Popup>
-              <p className="text-sm font-medium">New pothole report</p>
-            </Popup>
-          </Marker>
+          <Marker
+            position={[newPin.lat, newPin.lng]}
+            icon={newPinIcon}
+            eventHandlers={{ click: () => onNewPinClick?.() }}
+          />
         )}
         {children}
       </MapContainer>
