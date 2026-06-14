@@ -5,6 +5,14 @@ const WAKE_PHRASES = ['pothole ping'];
 
 export default function VoiceReport({ onVoiceReport, isListening, onToggleListening }) {
   const [status, setStatus] = useState('idle'); // idle | listening | gps | triggered
+  const statusRef = useRef(status);
+  const onVoiceReportRef = useRef(onVoiceReport);
+  const onToggleListeningRef = useRef(onToggleListening);
+
+  // Keep refs in sync
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { onVoiceReportRef.current = onVoiceReport; }, [onVoiceReport]);
+  useEffect(() => { onToggleListeningRef.current = onToggleListening; }, [onToggleListening]);
 
   const getPosition = () =>
     new Promise((resolve, reject) => {
@@ -22,7 +30,6 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       return;
     }
 
-    // Request mic permission
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
@@ -34,22 +41,22 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
     onToggleListening(true);
   };
 
+  // Stable callback that reads latest state from refs
   const handleWakeWord = useCallback(async () => {
-    if (status === 'gps' || status === 'triggered') return;
+    if (statusRef.current === 'gps' || statusRef.current === 'triggered') return;
     setStatus('gps');
     try {
       const pos = await getPosition();
       setStatus('triggered');
-      onVoiceReport(pos.coords.latitude, pos.coords.longitude);
-      // Reset after a moment
+      onVoiceReportRef.current(pos.coords.latitude, pos.coords.longitude);
       setTimeout(() => {
         setStatus('listening');
-        onToggleListening(true);
+        onToggleListeningRef.current(true);
       }, 2000);
     } catch {
       setStatus('listening');
     }
-  }, [status, onVoiceReport, onToggleListening]);
+  }, []);
 
   return (
     <div className="fixed bottom-24 sm:bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
@@ -79,16 +86,18 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       >
         {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
       </button>
-      {/* Hidden SpeechRecognition runner */}
       {isListening && <SpeechListener onWakeWord={handleWakeWord} />}
     </div>
   );
 }
 
 function SpeechListener({ onWakeWord }) {
-  const recognitionRef = useRef(null);
+  const onWakeWordRef = useRef(onWakeWord);
 
-  React.useEffect(() => {
+  // Keep ref current without re-triggering effect
+  useEffect(() => { onWakeWordRef.current = onWakeWord; });
+
+  useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
@@ -102,7 +111,7 @@ function SpeechListener({ onWakeWord }) {
         const transcript = event.results[i][0].transcript.toLowerCase();
         for (const phrase of WAKE_PHRASES) {
           if (transcript.includes(phrase)) {
-            onWakeWord();
+            onWakeWordRef.current();
             return;
           }
         }
@@ -110,24 +119,19 @@ function SpeechListener({ onWakeWord }) {
     };
 
     recognition.onerror = () => {
-      // Restart on error
       setTimeout(() => {
         try { recognition.start(); } catch {}
       }, 500);
     };
 
     recognition.onend = () => {
-      // Restart if still supposed to be listening
       try { recognition.start(); } catch {}
     };
 
     recognition.start();
-    recognitionRef.current = recognition;
 
-    return () => {
-      recognition.stop();
-    };
-  }, [onWakeWord]);
+    return () => recognition.stop();
+  }, []); // Run once — stable refs handle the rest
 
   return null;
 }
