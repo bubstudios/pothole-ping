@@ -90,7 +90,7 @@ export default function PotholeDetail({ pothole, onBack, onUpvote }) {
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -107,6 +107,16 @@ export default function PotholeDetail({ pothole, onBack, onUpvote }) {
             onClick={() => window.open(`tel:${pothole.jurisdiction_phone}`)}
           >
             Call to Report
+          </Button>
+        )}
+        {pothole.status !== 'fixed' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onUpvote(pothole.id, true)}
+            className="gap-1.5 text-green-600 border-green-300 hover:bg-green-50"
+          >
+            ✅ Mark as Fixed
           </Button>
         )}
       </div>

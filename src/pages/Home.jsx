@@ -121,17 +121,25 @@ Please be as specific as possible. If this is on a state highway, provide the st
     setFlyToCenter([pothole.latitude, pothole.longitude]);
   };
 
-  const handleUpvote = async (id) => {
+  const handleUpvote = async (id, markFixed = false) => {
     const pothole = potholes.find((p) => p.id === id);
     if (!pothole) return;
-    await base44.entities.PotholeReport.update(id, {
-      upvotes: (pothole.upvotes || 0) + 1,
-    });
+    if (markFixed) {
+      await base44.entities.PotholeReport.update(id, { status: 'fixed' });
+    } else {
+      await base44.entities.PotholeReport.update(id, {
+        upvotes: (pothole.upvotes || 0) + 1,
+      });
+    }
     loadPotholes();
-    setSelectedPothole((prev) =>
-      prev?.id === id ? { ...prev, upvotes: (prev.upvotes || 0) + 1 } : prev
-    );
+    setSelectedPothole((prev) => {
+      if (prev?.id !== id) return prev;
+      if (markFixed) return { ...prev, status: 'fixed' };
+      return { ...prev, upvotes: (prev.upvotes || 0) + 1 };
+    });
   };
+
+  const [showFixed, setShowFixed] = useState(false);
 
   const startDropping = () => {
     setIsDropping(true);
@@ -140,7 +148,8 @@ Please be as specific as possible. If this is on a state highway, provide the st
     setSidebarOpen(false);
   };
 
-  const filteredPotholes = potholes.filter((p) => {
+  const displayPotholes = potholes.filter((p) => showFixed || p.status !== 'fixed');
+  const filteredPotholes = displayPotholes.filter((p) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -167,6 +176,14 @@ Please be as specific as possible. If this is on a state highway, provide the st
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFixed(!showFixed)}
+            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              showFixed ? 'bg-green-50 border-green-300 text-green-700' : 'text-muted-foreground border-border hover:bg-muted'
+            }`}
+          >
+            {showFixed ? '✅ Including Fixed' : 'Hide Fixed'}
+          </button>
           <div className="hidden sm:flex border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('map')}
@@ -206,7 +223,7 @@ Please be as specific as possible. If this is on a state highway, provide the st
         {view === 'map' && (
           <div className="flex-1">
             <PotholeMap
-              potholes={potholes}
+              potholes={displayPotholes}
               onMapClick={handleMapClick}
               newPin={newPin}
               isDropping={isDropping}
