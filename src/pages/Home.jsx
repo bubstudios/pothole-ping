@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull } from 'lucide-react';
 import PotholeMap from '@/components/map/PotholeMap';
 import ReportForm from '@/components/pothole/ReportForm';
 import PotholeDetail from '@/components/pothole/PotholeDetail';
@@ -220,6 +220,13 @@ export default function Home() {
           >
             <Trophy className="w-3.5 h-3.5" />
             Ranks
+          </Link>
+          <Link
+            to="/hall-of-shame"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-red-500 border-red-200 hover:bg-red-50 transition-colors"
+          >
+            <Skull className="w-3.5 h-3.5" />
+            Shame
           </Link>
           <div className="hidden sm:flex border rounded-lg overflow-hidden">
             <button
