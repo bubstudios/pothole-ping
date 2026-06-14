@@ -10,6 +10,10 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import Home from '@/pages/Home';
+import Leaderboard from '@/pages/Leaderboard';
+import HallOfShame from '@/pages/HallOfShame';
+import BureaucracyTracker from '@/pages/BureaucracyTracker';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -33,7 +37,10 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/" element={<div style={{ padding: 40 }}><h1>PotholePing</h1></div>} />
+        <Route path="/" element={<Home />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/hall-of-shame" element={<HallOfShame />} />
+        <Route path="/bureaucracy" element={<BureaucracyTracker />} />
       </Route>
     </Routes>
   );
