@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+// import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
@@ -82,23 +82,20 @@ export default function Register() {
             {error}
           </div>
         )}
-        <div className="flex justify-center mb-6">
-          <InputOTP
+        <div className="mb-4">
+          <Label htmlFor="otp">Verification code</Label>
+          <Input
+            id="otp"
+            type="text"
+            inputMode="numeric"
             maxLength={6}
-            value={otpCode}
-            onChange={setOtpCode}
-            autoFocus
             autoComplete="one-time-code"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
+            autoFocus
+            placeholder="000000"
+            value={otpCode}
+            onChange={(e) => setOtpCode(e.target.value)}
+            className="text-center text-2xl tracking-widest h-14"
+          />
         </div>
         <Button
           className="w-full h-12 font-medium"
