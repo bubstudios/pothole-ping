@@ -9,6 +9,7 @@ import ReportForm from '@/components/pothole/ReportForm';
 import PotholeDetail from '@/components/pothole/PotholeDetail';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
 import VoiceReport from '@/components/pothole/VoiceReport';
+import ProximityAlert from '@/components/pothole/ProximityAlert';
 
 async function reverseGeocode(lat, lng) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
@@ -62,6 +63,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFixed, setShowFixed] = useState(false);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
 
   useEffect(() => {
     loadPotholes();
@@ -206,6 +208,11 @@ export default function Home() {
           >
             {showFixed ? '✅ Including Fixed' : 'Hide Fixed'}
           </button>
+          <ProximityAlert
+            potholes={displayPotholes}
+            isActive={proximityAlertsOn}
+            onToggle={() => setProximityAlertsOn(!proximityAlertsOn)}
+          />
           <div className="hidden sm:flex border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('map')}
