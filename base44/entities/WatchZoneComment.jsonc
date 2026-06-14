@@ -19,5 +19,8 @@
       "description": "ID of parent comment for threading (null for top-level)"
     }
   },
-  "required": ["post_id", "text"]
+  "required": [
+    "post_id",
+    "text"
+  ]
 }

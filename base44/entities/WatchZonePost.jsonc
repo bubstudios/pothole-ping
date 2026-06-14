@@ -20,7 +20,11 @@
     },
     "type": {
       "type": "string",
-      "enum": ["discussion", "alert", "pothole"],
+      "enum": [
+        "discussion",
+        "alert",
+        "pothole"
+      ],
       "default": "discussion"
     },
     "comment_count": {
@@ -28,5 +32,9 @@
       "default": 0
     }
   },
-  "required": ["watch_zone_id", "title", "text"]
+  "required": [
+    "watch_zone_id",
+    "title",
+    "text"
+  ]
 }

@@ -19,5 +19,7 @@
       "default": 0
     }
   },
-  "required": ["zip_code"]
+  "required": [
+    "zip_code"
+  ]
 }
