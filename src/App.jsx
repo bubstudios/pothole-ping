@@ -9,6 +9,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Home from '@/pages/Home';
 import Leaderboard from '@/pages/Leaderboard';
 import HallOfShame from '@/pages/HallOfShame';
+import BureaucracyTracker from '@/pages/BureaucracyTracker';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -40,6 +41,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Home />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
       <Route path="/hall-of-shame" element={<HallOfShame />} />
+      <Route path="/bureaucracy" element={<BureaucracyTracker />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
