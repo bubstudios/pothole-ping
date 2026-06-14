@@ -99,6 +99,14 @@
       "type": "string",
       "description": "Email address for submitting reports to this jurisdiction"
     },
+    "open311_endpoint": {
+      "type": "string",
+      "description": "Open311 API endpoint URL for this jurisdiction"
+    },
+    "open311_service_code": {
+      "type": "string",
+      "description": "Open311 service code for pothole requests"
+    },
     "submission_details": {
       "type": "string",
       "description": "Details about how the report was submitted"

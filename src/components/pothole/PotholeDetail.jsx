@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle, Zap, Mail, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle, Zap, CheckCircle, Loader2 } from 'lucide-react';
 import JurisdictionCard from './JurisdictionCard';
 import moment from 'moment';
 
@@ -209,22 +209,29 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
       </div>
 
       {/* Submit to Agency */}
-      {pothole.submission_email && (
+      {(pothole.submission_email || pothole.open311_endpoint) && (
         <div className="border rounded-lg p-3 space-y-2">
           <h4 className="font-heading font-semibold text-sm flex items-center gap-1.5">
-            <Mail className="w-4 h-4" />
+            <Send className="w-4 h-4" />
             Submit to Agency
           </h4>
-          {pothole.submission_status === 'email_sent' || sendResult === 'sent' ? (
+          {pothole.submission_status === 'email_sent' || pothole.submission_status === 'open311_submitted' ? (
             <p className="text-xs text-green-600 flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" /> Report emailed to {pothole.submission_email}
+              <CheckCircle className="w-3 h-3" />
+              {pothole.submission_status === 'open311_submitted'
+                ? `Submitted via Open311 to ${pothole.jurisdiction_name}`
+                : `Report emailed to ${pothole.submission_email}`}
             </p>
           ) : sendResult === 'failed' ? (
             <p className="text-xs text-red-500">Failed to send. Try again or call instead.</p>
           ) : (
             <>
               <p className="text-xs text-muted-foreground">
-                This jurisdiction accepts reports at <span className="font-medium">{pothole.submission_email}</span>
+                {pothole.open311_endpoint && pothole.submission_email
+                  ? `Can submit via Open311 API or email (${pothole.submission_email})`
+                  : pothole.open311_endpoint
+                    ? 'Open311 API submission available'
+                    : `Email submission to ${pothole.submission_email}`}
               </p>
               <Button
                 size="sm"
@@ -238,7 +245,7 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-                {isSendingReport ? 'Sending...' : 'Email Report to Agency'}
+                {isSendingReport ? 'Sending...' : 'Submit Report to Agency'}
               </Button>
             </>
           )}

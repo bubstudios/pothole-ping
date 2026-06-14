@@ -172,6 +172,8 @@ export default function Home() {
       jurisdiction_phone: jurisdictionInfo?.jurisdiction_phone || '',
       jurisdiction_details: jurisdictionInfo?.jurisdiction_details || '',
       submission_email: jurisdictionInfo?.submission_email || '',
+      open311_endpoint: jurisdictionInfo?.open311_endpoint || '',
+      open311_service_code: jurisdictionInfo?.open311_service_code || '',
       photo_url: photo_url || '',
     };
     const created = await base44.entities.PotholeReport.create(report);
@@ -180,8 +182,8 @@ export default function Home() {
     setSidebarOpen(false);
     loadPotholes();
 
-    // Auto-submit if email is available
-    if (jurisdictionInfo?.submission_email) {
+    // Auto-submit if any submission method is available
+    if (jurisdictionInfo?.submission_email || jurisdictionInfo?.open311_endpoint) {
       try {
         await base44.functions.invoke('submitPotholeReport', { reportId: created.id });
         loadPotholes();
