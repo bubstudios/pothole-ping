@@ -54,6 +54,11 @@ function MapClickHandler({ onMapClick, isDropping }) {
   useEffect(() => {
     const handler = (e) => {
       if (isDroppingRef.current) {
+        // Ignore clicks on pothole markers or popups
+        const target = e.originalEvent?.target;
+        if (target?.closest?.('.leaflet-marker-icon') || target?.closest?.('.leaflet-popup')) {
+          return;
+        }
         onMapClickRef.current(e.latlng);
       }
     };
