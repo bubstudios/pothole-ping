@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import PotholeMap from '@/components/map/PotholeMap';
+import HeatmapLayer from '@/components/map/HeatmapLayer';
+import HeatmapControls from '@/components/map/HeatmapControls';
 import ReportForm from '@/components/pothole/ReportForm';
 import PotholeDetail from '@/components/pothole/PotholeDetail';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
@@ -57,6 +59,9 @@ export default function Home() {
   const [showFixed, setShowFixed] = useState(false);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  const [heatmapSeverity, setHeatmapSeverity] = useState('all');
+  const [heatmapTimeRange, setHeatmapTimeRange] = useState('all');
 
   useEffect(() => {
     loadPotholes();
@@ -319,6 +324,28 @@ export default function Home() {
               isDropping={isDropping}
               onPotholeClick={handlePotholeClick}
               flyToCenter={flyToCenter}
+            >
+              <HeatmapLayer
+                potholes={displayPotholes}
+                enabled={heatmapEnabled}
+                severityFilter={heatmapSeverity}
+                timeRange={heatmapTimeRange}
+              />
+            </PotholeMap>
+            <HeatmapControls
+              enabled={heatmapEnabled}
+              onToggle={() => setHeatmapEnabled(!heatmapEnabled)}
+              severityFilter={heatmapSeverity}
+              onSeverityChange={setHeatmapSeverity}
+              timeRange={heatmapTimeRange}
+              onTimeRangeChange={setHeatmapTimeRange}
+              hotspotCount={heatmapEnabled ? displayPotholes.filter(p => {
+                if (p.status === 'fixed') return false;
+                if (heatmapSeverity !== 'all' && p.severity !== heatmapSeverity) return false;
+                const timeCutoffs = { week: 7, month: 30, '3months': 90, all: Infinity };
+                const age = (Date.now() - new Date(p.created_date).getTime()) / (24*60*60*1000);
+                return age <= timeCutoffs[heatmapTimeRange];
+              }).length : 0}
             />
           </div>
         )}

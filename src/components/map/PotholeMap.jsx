@@ -83,6 +83,7 @@ export default function PotholeMap({
   isDropping,
   onPotholeClick,
   flyToCenter,
+  children,
 }) {
   const defaultCenter = [38.7, -90.3]; // STL area
 
@@ -129,6 +130,7 @@ export default function PotholeMap({
             </Popup>
           </Marker>
         )}
+        {children}
       </MapContainer>
 
       {isDropping && (
