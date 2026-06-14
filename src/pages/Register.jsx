@@ -1,14 +1,64 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
+
+// Simple 6-digit OTP input without external dependencies
+function OtpInput({ value, onChange, disabled }) {
+  const inputRefs = useRef([]);
+  const digits = value.split("");
+
+  const handleChange = (index, e) => {
+    const val = e.target.value;
+    if (!/^\d*$/.test(val)) return;
+    const newDigits = [...digits];
+    newDigits[index] = val.slice(-1);
+    const newValue = newDigits.join("").slice(0, 6);
+    onChange(newValue);
+    if (val && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    onChange(pasted);
+  };
+
+  return (
+    <div className="flex justify-center gap-2">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <input
+          key={i}
+          ref={(el) => (inputRefs.current[i] = el)}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={digits[i] || ""}
+          onChange={(e) => handleChange(i, e)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          onPaste={i === 0 ? handlePaste : undefined}
+          disabled={disabled}
+          autoComplete={i === 0 ? "one-time-code" : "off"}
+          className="w-12 h-14 text-center text-2xl font-semibold rounded-lg border border-input bg-transparent shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50"
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -82,23 +132,11 @@ export default function Register() {
             {error}
           </div>
         )}
-        <div className="flex justify-center mb-6">
-          <InputOTP
-            maxLength={6}
-            value={otpCode}
-            onChange={setOtpCode}
-            autoFocus
-            autoComplete="one-time-code"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
+        <div className="mb-6">
+          <Label className="text-center block mb-3 text-sm text-muted-foreground">
+            Enter verification code
+          </Label>
+          <OtpInput value={otpCode} onChange={setOtpCode} disabled={loading} />
         </div>
         <Button
           className="w-full h-12 font-medium"

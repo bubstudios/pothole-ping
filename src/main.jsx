@@ -14,7 +14,7 @@ function FallbackApp() {
 
 async function bootstrap() {
   try {
-    const { default: App } = await import('@/App.jsx?v=6');
+    const { default: App } = await import('@/App.jsx?v=11');
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   } catch (e) {
     console.error('App bootstrap failed:', e);
