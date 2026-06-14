@@ -5,8 +5,8 @@ import moment from 'moment';
 const severityDots = {
   minor: 'bg-yellow-400',
   moderate: 'bg-orange-400',
-  severe: 'bg-red-500',
-  dangerous: 'bg-red-800',
+  severe: 'bg-red-400',
+  dangerous: 'bg-red-700',
 };
 
 export default function PotholeListItem({ pothole, onClick }) {

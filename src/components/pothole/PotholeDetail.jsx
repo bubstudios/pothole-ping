@@ -3,15 +3,16 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle } from 'lucide-react';
 import JurisdictionCard from './JurisdictionCard';
 import moment from 'moment';
 
 const severityBadge = {
-  minor: 'bg-yellow-100 text-yellow-800',
-  moderate: 'bg-orange-100 text-orange-800',
-  severe: 'bg-red-100 text-red-800',
-  dangerous: 'bg-red-200 text-red-900',
+  minor: 'bg-yellow-400 text-yellow-900',
+  moderate: 'bg-orange-400 text-orange-900',
+  severe: 'bg-red-400 text-red-900',
+  dangerous: 'bg-red-700 text-red-50',
 };
 
 const statusBadge = {
@@ -36,6 +37,11 @@ export default function PotholeDetail({ pothole, onBack, onUpvote }) {
       '-created_date'
     );
     setComments(data);
+  };
+
+  const handleSeverityChange = async (newSeverity) => {
+    await base44.entities.PotholeReport.update(pothole.id, { severity: newSeverity });
+    onUpvote(pothole.id); // triggers parent refresh via loadPotholes
   };
 
   const handleAddComment = async () => {
@@ -67,10 +73,18 @@ export default function PotholeDetail({ pothole, onBack, onUpvote }) {
           </h2>
         </div>
 
-        <div className="flex gap-2 mt-2 flex-wrap">
-          <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${severityBadge[pothole.severity]}`}>
-            {pothole.severity}
-          </span>
+        <div className="flex gap-2 mt-2 flex-wrap items-center">
+          <Select value={pothole.severity} onValueChange={handleSeverityChange}>
+            <SelectTrigger className={`h-auto py-0.5 px-2 text-xs rounded-full font-medium capitalize border-0 w-auto gap-1 ${severityBadge[pothole.severity]}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="z-[9999]">
+              <SelectItem value="minor">Minor</SelectItem>
+              <SelectItem value="moderate">Moderate</SelectItem>
+              <SelectItem value="severe">Severe</SelectItem>
+              <SelectItem value="dangerous">Dangerous</SelectItem>
+            </SelectContent>
+          </Select>
           <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${statusBadge[pothole.status]}`}>
             {pothole.status?.replace('_', ' ')}
           </span>

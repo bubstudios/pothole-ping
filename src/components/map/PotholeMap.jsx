@@ -4,10 +4,10 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const severityColors = {
-  minor: '#f59e0b',
+  minor: '#eab308',
   moderate: '#f97316',
   severe: '#ef4444',
-  dangerous: '#991b1b',
+  dangerous: '#b91c1c',
 };
 
 const statusIcons = {
