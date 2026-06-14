@@ -316,7 +316,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 flex relative overflow-hidden">
         {view === 'map' && (
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <PotholeMap
               potholes={displayPotholes}
               onMapClick={handleMapClick}

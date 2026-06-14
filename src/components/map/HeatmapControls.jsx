@@ -31,7 +31,7 @@ export default function HeatmapControls({
         size="sm"
         variant="outline"
         onClick={onToggle}
-        className="gap-1.5 text-xs font-medium"
+        className="absolute top-2 left-2 z-[1000] gap-1.5 text-xs font-medium shadow-md"
       >
         <Flame className="w-3.5 h-3.5" />
         Heatmap
