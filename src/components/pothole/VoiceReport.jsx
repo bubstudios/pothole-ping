@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 
-const WAKE_PHRASES = ['pothole', 'hey pothole ping', 'report pothole'];
+const WAKE_PHRASES = ['pothole ping'];
 
 export default function VoiceReport({ onVoiceReport, isListening, onToggleListening }) {
   const [status, setStatus] = useState('idle'); // idle | listening | gps | triggered
@@ -55,7 +55,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
     <div className="fixed bottom-24 sm:bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
       {status === 'listening' && (
         <div className="bg-card border rounded-lg px-3 py-1.5 shadow-lg text-xs text-muted-foreground animate-pulse">
-          Say "pothole" to report
+          Say "Pothole Ping" to drop a pin
         </div>
       )}
       {status === 'gps' && (
@@ -66,7 +66,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       )}
       {status === 'triggered' && (
         <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 shadow-lg text-xs text-green-700 font-medium">
-          Pothole reported at your location!
+          Pin dropped! Fill in the details.
         </div>
       )}
       <button
