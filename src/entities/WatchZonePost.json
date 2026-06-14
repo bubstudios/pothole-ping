@@ -1,0 +1,32 @@
+{
+  "name": "WatchZonePost",
+  "type": "object",
+  "properties": {
+    "watch_zone_id": {
+      "type": "string",
+      "description": "ID of the watch zone this post belongs to"
+    },
+    "title": {
+      "type": "string",
+      "description": "Post title"
+    },
+    "text": {
+      "type": "string",
+      "description": "Post body"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of the poster"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["discussion", "alert", "pothole"],
+      "default": "discussion"
+    },
+    "comment_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": ["watch_zone_id", "title", "text"]
+}

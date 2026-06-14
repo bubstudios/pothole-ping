@@ -1,0 +1,11 @@
+{
+  "name": "UserWatchZone",
+  "type": "object",
+  "properties": {
+    "watch_zone_id": {
+      "type": "string",
+      "description": "The watch zone being subscribed to"
+    }
+  },
+  "required": ["watch_zone_id"]
+}

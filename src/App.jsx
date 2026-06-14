@@ -14,6 +14,7 @@ import Home from '@/pages/Home';
 import Leaderboard from '@/pages/Leaderboard';
 import HallOfShame from '@/pages/HallOfShame';
 import BureaucracyTracker from '@/pages/BureaucracyTracker';
+import WatchZones from '@/pages/WatchZones';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -41,6 +42,7 @@ const AuthenticatedApp = () => {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/hall-of-shame" element={<HallOfShame />} />
         <Route path="/bureaucracy" element={<BureaucracyTracker />} />
+        <Route path="/watch-zones" element={<WatchZones />} />
       </Route>
     </Routes>
   );

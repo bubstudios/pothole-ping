@@ -1,0 +1,23 @@
+{
+  "name": "WatchZoneComment",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "ID of the post this comment belongs to"
+    },
+    "text": {
+      "type": "string",
+      "description": "Comment text"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of the commenter"
+    },
+    "parent_comment_id": {
+      "type": "string",
+      "description": "ID of parent comment for threading (null for top-level)"
+    }
+  },
+  "required": ["post_id", "text"]
+}

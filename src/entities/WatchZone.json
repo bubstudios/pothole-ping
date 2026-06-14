@@ -1,0 +1,23 @@
+{
+  "name": "WatchZone",
+  "type": "object",
+  "properties": {
+    "zip_code": {
+      "type": "string",
+      "description": "US ZIP code for this watch zone"
+    },
+    "city": {
+      "type": "string",
+      "description": "City name"
+    },
+    "state": {
+      "type": "string",
+      "description": "State abbreviation"
+    },
+    "member_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": ["zip_code"]
+}

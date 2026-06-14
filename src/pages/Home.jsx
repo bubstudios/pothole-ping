@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -227,6 +227,13 @@ export default function Home() {
             <Building2 className="w-3.5 h-3.5" />
             Bureaucracy
           </Link>
+          <Link
+            to="/watch-zones"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            Neighborhoods
+          </Link>
           <div className="hidden sm:flex border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('map')}
@@ -273,6 +280,12 @@ export default function Home() {
                   <Link to="/bureaucracy" className="flex items-center gap-2 cursor-pointer">
                     <Building2 className="w-4 h-4" />
                     Bureaucracy Tracker
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/watch-zones" className="flex items-center gap-2 cursor-pointer">
+                    <MessageCircle className="w-4 h-4" />
+                    Neighborhood Watch
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowFixed(!showFixed)} className="flex items-center gap-2 cursor-pointer">
