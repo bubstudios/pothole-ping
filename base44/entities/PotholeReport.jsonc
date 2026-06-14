@@ -58,6 +58,10 @@
       "type": "string",
       "description": "Phone number to call to report the pothole"
     },
+    "jurisdiction_website": {
+      "type": "string",
+      "description": "Website URL where pothole/service requests can be submitted"
+    },
     "jurisdiction_details": {
       "type": "string",
       "description": "Additional info about who to contact and why"

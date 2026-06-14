@@ -1,6 +1,5 @@
 import React from 'react';
-import { Phone, Building2, MapPin, Info, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Phone, Building2, Info, Mail, Globe } from 'lucide-react';
 
 const typeColors = {
   city: 'bg-blue-50 border-blue-200 text-blue-800',
@@ -18,10 +17,35 @@ const typeLabels = {
   unknown: 'Unknown',
 };
 
+function buildEmailBody(report) {
+  const lines = [
+    'Pothole Report',
+    '',
+    `📍 Address: ${report.address || 'Unknown'}`,
+    `🌐 Coordinates: ${report.latitude}, ${report.longitude}`,
+    `⚠️ Severity: ${report.severity || 'Unknown'}`,
+  ];
+  if (report.description) {
+    lines.push(`📝 Description: ${report.description}`);
+  }
+  if (report.photo_url) {
+    lines.push(`📷 Photo: ${report.photo_url}`);
+  }
+  lines.push(
+    '',
+    `🔗 View on map: https://www.google.com/maps?q=${report.latitude},${report.longitude}`,
+    '',
+    `— Sent via PotholePing`
+  );
+  return encodeURIComponent(lines.join('\n'));
+}
+
 export default function JurisdictionCard({ report }) {
   if (!report?.jurisdiction_name) return null;
 
   const colorClass = typeColors[report.jurisdiction_type] || typeColors.unknown;
+  const hasEmail = !!report.submission_email;
+  const hasWebsite = !!report.jurisdiction_website;
 
   return (
     <div className={`rounded-lg border-2 p-4 ${colorClass}`}>
@@ -37,15 +61,39 @@ export default function JurisdictionCard({ report }) {
             </span>
           </div>
 
-          {report.jurisdiction_phone && (
-            <a
-              href={`tel:${report.jurisdiction_phone}`}
-              className="flex items-center gap-1.5 mt-2 text-sm font-medium hover:underline"
-            >
-              <Phone className="w-4 h-4" />
-              {report.jurisdiction_phone}
-            </a>
-          )}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {report.jurisdiction_phone && (
+              <a
+                href={`tel:${report.jurisdiction_phone}`}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white/60 hover:bg-white border border-white/40 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                Call
+              </a>
+            )}
+
+            {hasEmail && (
+              <a
+                href={`mailto:${report.submission_email}?subject=${encodeURIComponent('Pothole Report — ' + (report.address || `${report.latitude},${report.longitude}`))}&body=${buildEmailBody(report)}`}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white/60 hover:bg-white border border-white/40 transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                Email Report
+              </a>
+            )}
+
+            {hasWebsite && (
+              <a
+                href={report.jurisdiction_website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white/60 hover:bg-white border border-white/40 transition-colors"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                Submit Online
+              </a>
+            )}
+          </div>
 
           {report.jurisdiction_details && (
             <div className="flex items-start gap-1.5 mt-2 text-xs opacity-80">

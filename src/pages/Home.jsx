@@ -30,19 +30,20 @@ async function reverseGeocode(lat, lng) {
 
 async function lookupJurisdiction(lat, lng, address) {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `Find the responsible road maintenance authority for a pothole at this location:\nAddress: ${address}\nCoordinates: ${lat}, ${lng}\n\nDetermine:\n1. Whether this is inside a city/municipality, unincorporated county land, or on a state/federal highway\n2. The specific government entity responsible for road maintenance\n3. A phone number to call to report a pothole\n4. An email address where pothole/service requests can be submitted (public works, 311, or streets department)\n5. If this jurisdiction has an Open311 API, provide the endpoint URL and the service code for pothole requests\n\nBe specific. For state highways, provide the state DOT number. For unincorporated areas, provide the county public works number. If no email is publicly listed, leave it empty.`,
+    prompt: `Find the responsible road maintenance authority for a pothole at this location:\nAddress: ${address}\nCoordinates: ${lat}, ${lng}\n\nDetermine:\n1. Whether this is inside a city/municipality, unincorporated county land, or on a state/federal highway\n2. The specific government entity responsible for road maintenance\n3. A phone number to call to report a pothole\n4. An email address where pothole/service requests can be submitted (public works, 311, or streets department)\n5. A website URL where residents can submit pothole or service requests online (like a 311 portal, SeeClickFix page, or public works form)\n6. If this jurisdiction has an Open311 API, provide the endpoint URL and the service code for pothole requests\n\nBe specific. For state highways, provide the state DOT number. For unincorporated areas, provide the county public works number. If no email or website is publicly listed, leave it empty. The website should be the direct submission/page URL, not just the homepage.`,
     add_context_from_internet: true,
     response_json_schema: {
-      type: 'object',
-      properties: {
-        jurisdiction_name: { type: 'string' },
-        jurisdiction_type: { type: 'string', enum: ['city', 'county', 'state', 'federal', 'unknown'] },
-        jurisdiction_phone: { type: 'string' },
-        jurisdiction_details: { type: 'string' },
-        submission_email: { type: 'string' },
-        open311_endpoint: { type: 'string' },
-        open311_service_code: { type: 'string' },
-      },
+     type: 'object',
+     properties: {
+       jurisdiction_name: { type: 'string' },
+       jurisdiction_type: { type: 'string', enum: ['city', 'county', 'state', 'federal', 'unknown'] },
+       jurisdiction_phone: { type: 'string' },
+       jurisdiction_website: { type: 'string' },
+       jurisdiction_details: { type: 'string' },
+       submission_email: { type: 'string' },
+       open311_endpoint: { type: 'string' },
+       open311_service_code: { type: 'string' },
+     },
     },
     model: 'gemini_3_flash',
   });
@@ -181,6 +182,7 @@ export default function Home() {
       jurisdiction_name: jurisdictionInfo?.jurisdiction_name || '',
       jurisdiction_type: jurisdictionInfo?.jurisdiction_type || 'unknown',
       jurisdiction_phone: jurisdictionInfo?.jurisdiction_phone || '',
+      jurisdiction_website: jurisdictionInfo?.jurisdiction_website || '',
       jurisdiction_details: jurisdictionInfo?.jurisdiction_details || '',
       submission_email: jurisdictionInfo?.submission_email || '',
       open311_endpoint: jurisdictionInfo?.open311_endpoint || '',
