@@ -1,18 +1,22 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Loader2, AlertCircle } from 'lucide-react';
 
 const WAKE_PHRASES = ['pothole ping'];
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 export default function VoiceReport({ onVoiceReport, isListening, onToggleListening }) {
-  const [status, setStatus] = useState('idle'); // idle | listening | gps | triggered
+  const [status, setStatus] = useState('idle'); // idle | listening | gps | triggered | error
+  const [error, setError] = useState('');
   const statusRef = useRef(status);
   const onVoiceReportRef = useRef(onVoiceReport);
   const onToggleListeningRef = useRef(onToggleListening);
 
-  // Keep refs in sync
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { onVoiceReportRef.current = onVoiceReport; }, [onVoiceReport]);
   useEffect(() => { onToggleListeningRef.current = onToggleListening; }, [onToggleListening]);
+
+  // Clear error on unmount
+  useEffect(() => { return () => { setError(''); }; }, []);
 
   const getPosition = () =>
     new Promise((resolve, reject) => {
@@ -27,21 +31,37 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
     if (isListening) {
       onToggleListening(false);
       setStatus('idle');
+      setError('');
       return;
     }
 
+    // Check browser support
+    if (!SpeechRecognitionAPI) {
+      setStatus('error');
+      setError('Voice not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+
+    // Request mic permission
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      setStatus('idle');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop the test stream — SpeechRecognition uses its own mic access
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (e) {
+      setStatus('error');
+      if (e.name === 'NotAllowedError') {
+        setError('Microphone access denied. Allow mic in your browser settings.');
+      } else {
+        setError('No microphone found. Check your device.');
+      }
       return;
     }
 
+    setError('');
     setStatus('listening');
     onToggleListening(true);
   };
 
-  // Stable callback that reads latest state from refs
   const handleWakeWord = useCallback(async () => {
     if (statusRef.current === 'gps' || statusRef.current === 'triggered') return;
     setStatus('gps');
@@ -54,13 +74,15 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
         onToggleListeningRef.current(true);
       }, 2000);
     } catch {
+      setError('GPS unavailable. Try again.');
       setStatus('listening');
+      setTimeout(() => setError(''), 3000);
     }
   }, []);
 
   return (
     <div className="fixed bottom-24 sm:bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
-      {status === 'listening' && (
+      {status === 'listening' && !error && (
         <div className="bg-card border rounded-lg px-3 py-1.5 shadow-lg text-xs text-muted-foreground animate-pulse">
           Say "Pothole Ping" to drop a pin
         </div>
@@ -76,11 +98,19 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
           Pin dropped! Fill in the details.
         </div>
       )}
+      {status === 'error' && error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 shadow-lg text-xs text-red-700 flex items-center gap-1.5 max-w-[220px]">
+          <AlertCircle className="w-3 h-3 flex-shrink-0" />
+          {error}
+        </div>
+      )}
       <button
         onClick={handleToggle}
         className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
           isListening
             ? 'bg-red-500 text-white animate-pulse'
+            : status === 'error'
+            ? 'bg-destructive text-destructive-foreground'
             : 'bg-primary text-primary-foreground hover:scale-105'
         }`}
       >
@@ -93,15 +123,12 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
 
 function SpeechListener({ onWakeWord }) {
   const onWakeWordRef = useRef(onWakeWord);
-
-  // Keep ref current without re-triggering effect
   useEffect(() => { onWakeWordRef.current = onWakeWord; });
 
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognitionAPI) return;
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionAPI();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
@@ -131,7 +158,7 @@ function SpeechListener({ onWakeWord }) {
     recognition.start();
 
     return () => recognition.stop();
-  }, []); // Run once — stable refs handle the rest
+  }, []);
 
   return null;
 }
