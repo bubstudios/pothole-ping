@@ -64,10 +64,35 @@ export default function Home() {
   const [heatmapSeverity, setHeatmapSeverity] = useState('all');
   const [heatmapTimeRange, setHeatmapTimeRange] = useState('all');
   const [duplicateCandidate, setDuplicateCandidate] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRep, setUserRep] = useState(null);
 
   useEffect(() => {
     loadPotholes();
+    loadCurrentUser();
   }, []);
+
+  const loadCurrentUser = async () => {
+    try {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+      const reps = await base44.entities.UserReputation.filter({ created_by_id: user.id });
+      setUserRep(reps[0] || null);
+    } catch (e) {}
+  };
+
+  const getOrCreateRep = async () => {
+    if (userRep) return userRep;
+    if (!currentUser) return null;
+    const rep = await base44.entities.UserReputation.create({ karma: 0, reports_count: 0, confirmations_given: 0, fixes_marked: 0, fixes_disputed: 0 });
+    setUserRep(rep);
+    return rep;
+  };
+
+  const getWeight = () => {
+    const karma = userRep?.karma || 0;
+    return 1 + Math.min(karma / 50, 1); // caps at 2x
+  };
 
   const loadPotholes = async () => {
     const data = await base44.entities.PotholeReport.list('-created_date', 200);
@@ -171,16 +196,66 @@ export default function Home() {
   const handleUpvote = async (id, markFixed = false) => {
     const pothole = potholes.find((p) => p.id === id);
     if (!pothole) return;
+    const rep = await getOrCreateRep();
+
     if (markFixed) {
-      await base44.entities.PotholeReport.update(id, { status: 'fixed' });
+      await base44.entities.PotholeReport.update(id, {
+        status: 'fixed',
+        fixed_by: currentUser?.id || '',
+      });
+      if (rep) {
+        await base44.entities.UserReputation.update(rep.id, {
+          karma: (rep.karma || 0) + 5,
+          fixes_marked: (rep.fixes_marked || 0) + 1,
+        });
+      }
+    } else if (pothole.status === 'fixed') {
+      // Dispute — user says it's still there
+      await base44.entities.PotholeReport.update(id, {
+        status: 'disputed',
+        disputed_by: currentUser?.id || '',
+      });
+      // Penalize the fixer
+      if (pothole.fixed_by) {
+        const fixerReps = await base44.entities.UserReputation.filter({ created_by_id: pothole.fixed_by });
+        if (fixerReps[0]) {
+          await base44.entities.UserReputation.update(fixerReps[0].id, {
+            karma: (fixerReps[0].karma || 0) - 3,
+            fixes_disputed: (fixerReps[0].fixes_disputed || 0) + 1,
+          });
+        }
+      }
+      if (rep) {
+        await base44.entities.UserReputation.update(rep.id, {
+          karma: (rep.karma || 0) + 3,
+          confirmations_given: (rep.confirmations_given || 0) + 1,
+        });
+      }
     } else {
-      await base44.entities.PotholeReport.update(id, { upvotes: (pothole.upvotes || 0) + 1 });
+      const weight = getWeight();
+      const previousUpvotes = Number(pothole.upvotes) || 0;
+      const newUpvotes = previousUpvotes + weight;
+      await base44.entities.PotholeReport.update(id, {
+        upvotes: newUpvotes,
+        last_confirmed_date: new Date().toISOString(),
+      });
+      if (rep) {
+        await base44.entities.UserReputation.update(rep.id, {
+          karma: (rep.karma || 0) + 2,
+          confirmations_given: (rep.confirmations_given || 0) + 1,
+        });
+      }
     }
+
     loadPotholes();
     setSelectedPothole((prev) => {
       if (prev?.id !== id) return prev;
-      if (markFixed) return { ...prev, status: 'fixed' };
-      return { ...prev, upvotes: (prev.upvotes || 0) + 1 };
+      const updates = markFixed
+        ? { status: 'fixed', fixed_by: currentUser?.id || '' }
+        : pothole.status === 'fixed'
+          ? { status: 'disputed', disputed_by: currentUser?.id || '' }
+          : { upvotes: (prev.upvotes || 0) + getWeight(), last_confirmed_date: new Date().toISOString() };
+      return { ...prev, ...updates };
     });
   };
 
@@ -477,6 +552,7 @@ export default function Home() {
                 {selectedPothole && !newPin && !duplicateCandidate && (
                   <PotholeDetail
                     pothole={selectedPothole}
+                    currentUserId={currentUser?.id}
                     onBack={() => {
                       setSelectedPothole(null);
                       setSidebarOpen(false);

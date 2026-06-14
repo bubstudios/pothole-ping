@@ -1,0 +1,32 @@
+{
+  "name": "UserReputation",
+  "type": "object",
+  "properties": {
+    "karma": {
+      "type": "number",
+      "default": 0,
+      "description": "Overall reputation score"
+    },
+    "reports_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Total reports submitted"
+    },
+    "confirmations_given": {
+      "type": "number",
+      "default": 0,
+      "description": "Total confirmations given to others"
+    },
+    "fixes_marked": {
+      "type": "number",
+      "default": 0,
+      "description": "Times user marked a pothole as fixed"
+    },
+    "fixes_disputed": {
+      "type": "number",
+      "default": 0,
+      "description": "Times user's fix was disputed"
+    }
+  },
+  "required": []
+}

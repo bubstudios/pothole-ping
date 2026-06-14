@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Trophy, Medal, Award, MapPin, ThumbsUp, CheckCircle, Camera, MessageCircle, Star, Flame, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trophy, Medal, Award, MapPin, ThumbsUp, CheckCircle, Camera, MessageCircle, Star, Flame, Loader2, Shield, Zap } from 'lucide-react';
 
 const BADGES = [
   { id: 'first_report', icon: '🥚', label: 'First Report', desc: 'Reported your first pothole', check: (s) => s.reports >= 1 },
@@ -15,6 +15,9 @@ const BADGES = [
   { id: 'hot_report', icon: '🔥', label: 'Hot Report', desc: 'A report reached 10+ upvotes', check: (s) => s.hotReport },
   { id: 'top_three', icon: '🏆', label: 'Top 3', desc: 'Ranked in the top 3 reporters', check: () => false }, // handled separately
   { id: 'century', icon: '💯', label: 'Century Mark', desc: '100 total upvotes received', check: (s) => s.totalUpvotes >= 100 },
+  { id: 'sage', icon: '🧙', label: 'Street Sage', desc: '50+ karma earned', check: (s) => s.karma >= 50 },
+  { id: 'trusted', icon: '🛡️', label: 'Trusted Reporter', desc: '20+ confirmations on their reports', check: (s) => s.totalUpvotes >= 20 },
+  { id: 'fixer', icon: '🔧', label: 'Fix Confirmer', desc: '5 potholes marked fixed', check: (s) => s.fixed >= 5 },
 ];
 
 export default function Leaderboard() {
@@ -27,11 +30,18 @@ export default function Leaderboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const [reports, comments, users] = await Promise.all([
+    const [reports, comments, users, reps] = await Promise.all([
       base44.entities.PotholeReport.list('-created_date', 500),
       base44.entities.PotholeComment.list('-created_date', 500),
       base44.entities.User.list(),
+      base44.entities.UserReputation.list(),
     ]);
+
+    // Build karma map
+    const karmaMap = {};
+    for (const r of reps) {
+      karmaMap[r.created_by_id] = r.karma || 0;
+    }
 
     // Build user stats
     const userMap = {};
@@ -46,6 +56,7 @@ export default function Leaderboard() {
         photos: 0,
         hotReport: false,
         comments: 0,
+        karma: karmaMap[u.id] || 0,
         badges: [],
       };
     }
@@ -53,10 +64,10 @@ export default function Leaderboard() {
     for (const r of reports) {
       const uid = r.created_by_id;
       if (!userMap[uid]) {
-        userMap[uid] = { id: uid, name: 'Anonymous', reports: 0, fixed: 0, totalUpvotes: 0, photos: 0, hotReport: false, comments: 0, badges: [] };
+        userMap[uid] = { id: uid, name: 'Anonymous', reports: 0, fixed: 0, totalUpvotes: 0, photos: 0, hotReport: false, comments: 0, karma: 0, badges: [] };
       }
       userMap[uid].reports++;
-      userMap[uid].totalUpvotes += r.upvotes || 0;
+      userMap[uid].totalUpvotes += Math.round(r.upvotes || 0);
       if (r.status === 'fixed') userMap[uid].fixed++;
       if (r.photo_url) userMap[uid].photos++;
       if ((r.upvotes || 0) >= 10) userMap[uid].hotReport = true;
@@ -69,8 +80,8 @@ export default function Leaderboard() {
       }
     }
 
-    // Sort by reports desc
-    const sorted = Object.values(userMap).sort((a, b) => b.reports - a.reports);
+    // Sort by karma desc
+    const sorted = Object.values(userMap).sort((a, b) => b.karma - a.karma || b.reports - a.reports);
 
     // Assign badges
     for (const s of sorted) {
@@ -142,8 +153,8 @@ export default function Leaderboard() {
                 >
                   <p className="text-2xl mb-1">{['🥇', '🥈', '🥉'][i]}</p>
                   <p className="font-heading font-bold text-sm truncate">{s.name}</p>
-                  <p className="text-2xl font-bold text-primary mt-1">{s.reports}</p>
-                  <p className="text-xs text-muted-foreground">reports</p>
+                  <p className="text-2xl font-bold text-primary mt-1">{s.karma}</p>
+                  <p className="text-xs text-muted-foreground">karma</p>
                 </div>
               ))}
             </div>
@@ -154,7 +165,7 @@ export default function Leaderboard() {
             <div className="p-4 border-b bg-muted/50">
               <h2 className="font-heading font-semibold text-sm flex items-center gap-2">
                 <Medal className="w-4 h-4" />
-                All Reporters
+                All Reporters — Ranked by Karma
               </h2>
             </div>
             <div className="divide-y">
@@ -174,6 +185,7 @@ export default function Leaderboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{s.name}</p>
                     <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
+                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" />{s.karma}</span>
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{s.reports}</span>
                       <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{s.totalUpvotes}</span>
                       <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" />{s.fixed}</span>

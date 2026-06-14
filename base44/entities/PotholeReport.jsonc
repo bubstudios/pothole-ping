@@ -34,7 +34,8 @@
         "reported",
         "acknowledged",
         "in_progress",
-        "fixed"
+        "fixed",
+        "disputed"
       ],
       "default": "reported"
     },
@@ -68,7 +69,19 @@
     "upvotes": {
       "type": "number",
       "default": 0,
-      "description": "Number of people who confirmed this pothole"
+      "description": "Weighted number of confirmations"
+    },
+    "last_confirmed_date": {
+      "type": "string",
+      "description": "Date of last confirmation (ISO)"
+    },
+    "fixed_by": {
+      "type": "string",
+      "description": "ID of user who marked as fixed"
+    },
+    "disputed_by": {
+      "type": "string",
+      "description": "ID of user who disputed the fix"
     }
   },
   "required": [
