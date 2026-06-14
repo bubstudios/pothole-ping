@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
       
       // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
       const headers = { 'X-App-Id': appParams.appId };
       if (appParams.token) {
         headers['Authorization'] = `Bearer ${appParams.token}`;
@@ -31,10 +30,28 @@ export const AuthProvider = ({ children }) => {
       
       try {
         const res = await fetch(`/api/apps/public/prod/public-settings/by-id/${appParams.appId}`, { headers });
-        const publicSettings = res.ok ? await res.json() : null;
+        
+        if (!res.ok) {
+          // Try to parse error body for reason
+          let errorData = null;
+          try { errorData = await res.json(); } catch (_) {}
+          const reason = errorData?.extra_data?.reason;
+          
+          if (res.status === 403 && reason === 'auth_required') {
+            setAuthError({ type: 'auth_required', message: 'Authentication required' });
+          } else if (res.status === 403 && reason === 'user_not_registered') {
+            setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
+          } else {
+            setAuthError({ type: 'unknown', message: `Failed to load app (${res.status})` });
+          }
+          setIsLoadingPublicSettings(false);
+          setIsLoadingAuth(false);
+          return;
+        }
+        
+        const publicSettings = await res.json();
         setAppPublicSettings(publicSettings);
         
-        // If we got the app public settings successfully, check if user is authenticated
         if (appParams.token) {
           await checkUserAuth();
         } else {
