@@ -95,7 +95,7 @@ export default function Home() {
     setIsLoadingJurisdiction(false);
   }, [isDropping]);
 
-  const handleSubmitReport = async ({ description, severity }) => {
+  const handleSubmitReport = async ({ description, severity, photo_url }) => {
     const report = {
       latitude: newPin.lat,
       longitude: newPin.lng,
@@ -106,6 +106,7 @@ export default function Home() {
       jurisdiction_type: jurisdictionInfo?.jurisdiction_type || 'unknown',
       jurisdiction_phone: jurisdictionInfo?.jurisdiction_phone || '',
       jurisdiction_details: jurisdictionInfo?.jurisdiction_details || '',
+      photo_url: photo_url || '',
     };
     await base44.entities.PotholeReport.create(report);
     setNewPin(null);

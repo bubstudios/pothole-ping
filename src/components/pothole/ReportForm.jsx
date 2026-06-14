@@ -1,21 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, MapPin, AlertTriangle } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle, Camera, X } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import JurisdictionCard from './JurisdictionCard';
 
 export default function ReportForm({ pin, jurisdictionInfo, isLoadingJurisdiction, onSubmit, onCancel }) {
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('moderate');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setPhotoUrl(file_url);
+    setIsUploadingPhoto(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await onSubmit({ description, severity });
+    await onSubmit({ description, severity, photo_url: photoUrl });
     setIsSubmitting(false);
   };
 
@@ -50,7 +63,7 @@ export default function ReportForm({ pin, jurisdictionInfo, isLoadingJurisdictio
           <SelectTrigger className="mt-1">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[9999]">
             <SelectItem value="minor">Minor — small crack or dip</SelectItem>
             <SelectItem value="moderate">Moderate — noticeable hole</SelectItem>
             <SelectItem value="severe">Severe — large hole, avoid if possible</SelectItem>
@@ -68,6 +81,49 @@ export default function ReportForm({ pin, jurisdictionInfo, isLoadingJurisdictio
           placeholder="Which lane? Near what intersection? How big is it?"
           className="mt-1 min-h-[80px]"
         />
+      </div>
+
+      {/* Photo Upload */}
+      <div>
+        <Label>Photo (optional)</Label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoSelect}
+          className="hidden"
+        />
+        {photoUrl ? (
+          <div className="mt-1 relative rounded-lg overflow-hidden border">
+            <img src={photoUrl} alt="Pothole" className="w-full h-40 object-cover" />
+            <button
+              type="button"
+              onClick={() => { setPhotoUrl(null); fileInputRef.current.value = ''; }}
+              className="absolute top-1 right-1 p-1 bg-black/50 rounded-full hover:bg-black/70"
+            >
+              <X className="w-3.5 h-3.5 text-white" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingPhoto}
+            className="mt-1 w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-muted-foreground/30 rounded-lg text-sm text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+          >
+            {isUploadingPhoto ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Camera className="w-4 h-4" />
+                Add photo
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="flex gap-2 pt-2">

@@ -84,6 +84,12 @@ export default function PotholeDetail({ pothole, onBack, onUpvote }) {
 
       <JurisdictionCard report={pothole} />
 
+      {pothole.photo_url && (
+        <div className="rounded-lg overflow-hidden border">
+          <img src={pothole.photo_url} alt="Pothole" className="w-full max-h-56 object-cover" />
+        </div>
+      )}
+
       {pothole.description && (
         <div className="bg-muted rounded-lg p-3">
           <p className="text-sm">{pothole.description}</p>
