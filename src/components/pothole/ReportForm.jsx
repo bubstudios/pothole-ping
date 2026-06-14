@@ -74,7 +74,7 @@ export default function ReportForm({ pin, jurisdictionInfo, isLoadingJurisdictio
         <Button
           type="submit"
           className="flex-1"
-          disabled={isSubmitting || isLoadingJurisdiction}
+          disabled={isSubmitting}
         >
           {isSubmitting ? (
             <>

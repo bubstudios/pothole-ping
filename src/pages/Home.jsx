@@ -9,6 +9,45 @@ import ReportForm from '@/components/pothole/ReportForm';
 import PotholeDetail from '@/components/pothole/PotholeDetail';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
 
+async function reverseGeocode(lat, lng) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+}
+
+async function lookupJurisdiction(lat, lng, address) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `Find the responsible road maintenance authority for a pothole at this location:
+Address: ${address}
+Coordinates: ${lat}, ${lng}
+
+Determine:
+1. Whether this is inside a city/municipality, unincorporated county land, or on a state/federal highway
+2. The specific government entity responsible for road maintenance
+3. A phone number to call to report a pothole
+
+Be specific. For state highways, provide the state DOT number. For unincorporated areas, provide the county public works number.
+
+Examples:
+- Unincorporated Florissant, MO → St. Louis County Dept of Transportation, (314) 615-8500
+- Florissant city limits → City of Florissant Public Works, (314) 839-7680
+- Route 67 (Lindbergh Blvd) → MoDOT, (888) 275-6636`,
+    add_context_from_internet: true,
+    response_json_schema: {
+      type: 'object',
+      properties: {
+        jurisdiction_name: { type: 'string' },
+        jurisdiction_type: { type: 'string', enum: ['city', 'county', 'state', 'federal', 'unknown'] },
+        jurisdiction_phone: { type: 'string' },
+        jurisdiction_details: { type: 'string' },
+      },
+    },
+    model: 'gemini_3_flash',
+  });
+  return result;
+}
+
 export default function Home() {
   const [potholes, setPotholes] = useState([]);
   const [isDropping, setIsDropping] = useState(false);
@@ -20,6 +59,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [flyToCenter, setFlyToCenter] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFixed, setShowFixed] = useState(false);
 
   useEffect(() => {
     loadPotholes();
@@ -30,62 +70,30 @@ export default function Home() {
     setPotholes(data);
   };
 
-  const lookupJurisdiction = useCallback(async (lat, lng) => {
+  const handleMapClick = useCallback(async (latlng) => {
+    if (!isDropping) return;
+    setIsDropping(false);
+
+    const pin = { lat: latlng.lat, lng: latlng.lng };
+    setNewPin(pin);
+    setSelectedPothole(null);
+    setSidebarOpen(true);
+    setJurisdictionInfo(null);
     setIsLoadingJurisdiction(true);
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `I need to find the responsible government authority for a pothole at these GPS coordinates: ${lat}, ${lng} (somewhere in the USA).
 
-Please determine:
-1. The exact street address or nearest intersection
-2. Whether this location is within a city/municipality, in unincorporated county land, or on a state/federal highway
-3. The specific government entity responsible for road maintenance at this location
-4. The phone number to call to report a pothole at this location
+    // Fast reverse geocode
+    const address = await reverseGeocode(latlng.lat, latlng.lng);
+    setJurisdictionInfo({ address });
 
-Important context: In many areas (like St. Louis County, MO), some neighborhoods are incorporated cities and some are unincorporated — this matters because different authorities handle road maintenance. State highways running through towns are typically maintained by the state DOT, not the local municipality.
-
-Please be as specific as possible. If this is on a state highway, provide the state DOT number. If it's in an unincorporated area, provide the county public works number.`,
-      add_context_from_internet: true,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          address: {
-            type: 'string',
-            description: 'Street address or nearest intersection',
-          },
-          jurisdiction_name: {
-            type: 'string',
-            description: 'Name of responsible authority (e.g., "City of Florissant Public Works", "St. Louis County Transportation")',
-          },
-          jurisdiction_type: {
-            type: 'string',
-            enum: ['city', 'county', 'state', 'federal', 'unknown'],
-          },
-          jurisdiction_phone: {
-            type: 'string',
-            description: 'Phone number to call',
-          },
-          jurisdiction_details: {
-            type: 'string',
-            description: 'Brief explanation of why this entity is responsible and any helpful tips for reporting',
-          },
-        },
-      },
-      model: 'gemini_3_flash',
-    });
-    setJurisdictionInfo(result);
+    // Background: lookup jurisdiction
+    try {
+      const info = await lookupJurisdiction(latlng.lat, latlng.lng, address);
+      setJurisdictionInfo((prev) => ({ ...prev, ...info }));
+    } catch (e) {
+      // jurisdiction lookup failed, form still usable with just address
+    }
     setIsLoadingJurisdiction(false);
-    return result;
-  }, []);
-
-  const handleMapClick = useCallback(
-    (latlng) => {
-      setNewPin(latlng);
-      setSelectedPothole(null);
-      setSidebarOpen(true);
-      lookupJurisdiction(latlng.lat, latlng.lng);
-    },
-    [lookupJurisdiction]
-  );
+  }, [isDropping]);
 
   const handleSubmitReport = async ({ description, severity }) => {
     const report = {
@@ -102,7 +110,6 @@ Please be as specific as possible. If this is on a state highway, provide the st
     await base44.entities.PotholeReport.create(report);
     setNewPin(null);
     setJurisdictionInfo(null);
-    setIsDropping(false);
     setSidebarOpen(false);
     loadPotholes();
   };
@@ -110,13 +117,14 @@ Please be as specific as possible. If this is on a state highway, provide the st
   const handleCancelReport = () => {
     setNewPin(null);
     setJurisdictionInfo(null);
-    setIsDropping(false);
+    setIsLoadingJurisdiction(false);
     setSidebarOpen(false);
   };
 
   const handlePotholeClick = (pothole) => {
     setSelectedPothole(pothole);
     setNewPin(null);
+    setIsDropping(false);
     setSidebarOpen(true);
     setFlyToCenter([pothole.latitude, pothole.longitude]);
   };
@@ -127,9 +135,7 @@ Please be as specific as possible. If this is on a state highway, provide the st
     if (markFixed) {
       await base44.entities.PotholeReport.update(id, { status: 'fixed' });
     } else {
-      await base44.entities.PotholeReport.update(id, {
-        upvotes: (pothole.upvotes || 0) + 1,
-      });
+      await base44.entities.PotholeReport.update(id, { upvotes: (pothole.upvotes || 0) + 1 });
     }
     loadPotholes();
     setSelectedPothole((prev) => {
@@ -138,8 +144,6 @@ Please be as specific as possible. If this is on a state highway, provide the st
       return { ...prev, upvotes: (prev.upvotes || 0) + 1 };
     });
   };
-
-  const [showFixed, setShowFixed] = useState(false);
 
   const startDropping = () => {
     setIsDropping(true);
@@ -256,11 +260,7 @@ Please be as specific as possible. If this is on a state highway, provide the st
                   </div>
                 ) : (
                   filteredPotholes.map((p) => (
-                    <PotholeListItem
-                      key={p.id}
-                      pothole={p}
-                      onClick={handlePotholeClick}
-                    />
+                    <PotholeListItem key={p.id} pothole={p} onClick={handlePotholeClick} />
                   ))
                 )}
               </div>
