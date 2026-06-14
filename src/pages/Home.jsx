@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import PotholeDetail from '@/components/pothole/PotholeDetail';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
 import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
+import DuplicateWarning from '@/components/pothole/DuplicateWarning';
 
 async function reverseGeocode(lat, lng) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
@@ -62,6 +63,7 @@ export default function Home() {
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [heatmapSeverity, setHeatmapSeverity] = useState('all');
   const [heatmapTimeRange, setHeatmapTimeRange] = useState('all');
+  const [duplicateCandidate, setDuplicateCandidate] = useState(null);
 
   useEffect(() => {
     loadPotholes();
@@ -72,10 +74,38 @@ export default function Home() {
     setPotholes(data);
   };
 
+  // Haversine distance in feet
+  const distanceFt = (lat1, lng1, lat2, lng2) => {
+    const R = 20903520; // Earth radius in feet
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  const DUPE_THRESHOLD_FT = 50;
+
   const openReportAt = useCallback(async (lat, lng) => {
+    // Duplicate check: is there an unfixed pothole within 50ft?
+    const unfixed = potholes.filter((p) => p.status !== 'fixed');
+    const nearby = unfixed.find((p) => distanceFt(lat, lng, Number(p.latitude), Number(p.longitude)) <= DUPE_THRESHOLD_FT);
+
+    if (nearby) {
+      setDuplicateCandidate(nearby);
+      setNewPin(null);
+      setSelectedPothole(null);
+      setSidebarOpen(true);
+      setJurisdictionInfo(null);
+      setIsLoadingJurisdiction(false);
+      return;
+    }
+
     const pin = { lat, lng };
     setNewPin(pin);
     setSelectedPothole(null);
+    setDuplicateCandidate(null);
     setSidebarOpen(true);
     setJurisdictionInfo(null);
     setIsLoadingJurisdiction(true);
@@ -88,7 +118,7 @@ export default function Home() {
       setJurisdictionInfo((prev) => ({ ...prev, ...info }));
     } catch (e) {}
     setIsLoadingJurisdiction(false);
-  }, []);
+  }, [potholes]);
 
   const handleMapClick = useCallback(async (latlng) => {
     if (!isDropping) return;
@@ -126,6 +156,7 @@ export default function Home() {
     setNewPin(null);
     setJurisdictionInfo(null);
     setIsLoadingJurisdiction(false);
+    setDuplicateCandidate(null);
     setSidebarOpen(false);
   };
 
@@ -167,6 +198,7 @@ export default function Home() {
     setIsVoiceListening(false);
     setSelectedPothole(null);
     setNewPin(null);
+    setDuplicateCandidate(null);
     setSidebarOpen(false);
   };
 
@@ -398,7 +430,42 @@ export default function Home() {
             </div>
             <ScrollArea className="flex-1">
               <div className="p-4">
-                {newPin && (
+                {duplicateCandidate && !newPin && !selectedPothole && (
+                  <DuplicateWarning
+                    candidate={duplicateCandidate}
+                    distanceFt={distanceFt}
+                    onConfirm={(pothole) => {
+                      handleUpvote(pothole.id);
+                      setSelectedPothole(pothole);
+                      setDuplicateCandidate(null);
+                      setFlyToCenter([pothole.latitude, pothole.longitude]);
+                    }}
+                    onReportAnyway={() => {
+                      const lat = Number(duplicateCandidate.latitude);
+                      const lng = Number(duplicateCandidate.longitude);
+                      // Adjust slightly so it's a new pin near the original
+                      const offset = 0.00015; // ~50ft in lat
+                      const pin = { lat: lat + offset, lng: lng + offset };
+                      setDuplicateCandidate(null);
+                      setNewPin(pin);
+                      setIsLoadingJurisdiction(true);
+                      (async () => {
+                        const address = await reverseGeocode(pin.lat, pin.lng);
+                        setJurisdictionInfo({ address });
+                        try {
+                          const info = await lookupJurisdiction(pin.lat, pin.lng, address);
+                          setJurisdictionInfo((prev) => ({ ...prev, ...info }));
+                        } catch (e) {}
+                        setIsLoadingJurisdiction(false);
+                      })();
+                    }}
+                    onDismiss={() => {
+                      setDuplicateCandidate(null);
+                      setSidebarOpen(false);
+                    }}
+                  />
+                )}
+                {newPin && !duplicateCandidate && (
                   <ReportForm
                     pin={newPin}
                     jurisdictionInfo={jurisdictionInfo}
@@ -407,7 +474,7 @@ export default function Home() {
                     onCancel={handleCancelReport}
                   />
                 )}
-                {selectedPothole && !newPin && (
+                {selectedPothole && !newPin && !duplicateCandidate && (
                   <PotholeDetail
                     pothole={selectedPothole}
                     onBack={() => {
