@@ -8,6 +8,7 @@ import PotholeMap from '@/components/map/PotholeMap';
 import ReportForm from '@/components/pothole/ReportForm';
 import PotholeDetail from '@/components/pothole/PotholeDetail';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
+import VoiceReport from '@/components/pothole/VoiceReport';
 
 async function reverseGeocode(lat, lng) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
@@ -60,6 +61,7 @@ export default function Home() {
   const [flyToCenter, setFlyToCenter] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFixed, setShowFixed] = useState(false);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
 
   useEffect(() => {
     loadPotholes();
@@ -70,30 +72,35 @@ export default function Home() {
     setPotholes(data);
   };
 
-  const handleMapClick = useCallback(async (latlng) => {
-    if (!isDropping) return;
-    setIsDropping(false);
-
-    const pin = { lat: latlng.lat, lng: latlng.lng };
+  const openReportAt = useCallback(async (lat, lng) => {
+    const pin = { lat, lng };
     setNewPin(pin);
     setSelectedPothole(null);
     setSidebarOpen(true);
     setJurisdictionInfo(null);
     setIsLoadingJurisdiction(true);
 
-    // Fast reverse geocode
-    const address = await reverseGeocode(latlng.lat, latlng.lng);
+    const address = await reverseGeocode(lat, lng);
     setJurisdictionInfo({ address });
 
-    // Background: lookup jurisdiction
     try {
-      const info = await lookupJurisdiction(latlng.lat, latlng.lng, address);
+      const info = await lookupJurisdiction(lat, lng, address);
       setJurisdictionInfo((prev) => ({ ...prev, ...info }));
-    } catch (e) {
-      // jurisdiction lookup failed, form still usable with just address
-    }
+    } catch (e) {}
     setIsLoadingJurisdiction(false);
-  }, [isDropping]);
+  }, []);
+
+  const handleMapClick = useCallback(async (latlng) => {
+    if (!isDropping) return;
+    setIsDropping(false);
+    openReportAt(latlng.lat, latlng.lng);
+  }, [isDropping, openReportAt]);
+
+  const handleVoiceReport = useCallback(async (lat, lng) => {
+    setIsVoiceListening(false);
+    setIsDropping(false);
+    openReportAt(lat, lng);
+  }, [openReportAt]);
 
   const handleSubmitReport = async ({ description, severity, photo_url }) => {
     const report = {
@@ -148,6 +155,7 @@ export default function Home() {
 
   const startDropping = () => {
     setIsDropping(true);
+    setIsVoiceListening(false);
     setSelectedPothole(null);
     setNewPin(null);
     setSidebarOpen(false);
@@ -312,6 +320,13 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Voice Report floating button */}
+      <VoiceReport
+        onVoiceReport={handleVoiceReport}
+        isListening={isVoiceListening}
+        onToggleListening={setIsVoiceListening}
+      />
 
       {/* Mobile view toggle */}
       <div className="sm:hidden flex border-t bg-card">
