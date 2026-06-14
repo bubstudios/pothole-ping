@@ -4,7 +4,13 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2 } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import PotholeMap from '@/components/map/PotholeMap';
 import ReportForm from '@/components/pothole/ReportForm';
 import PotholeDetail from '@/components/pothole/PotholeDetail';
@@ -240,6 +246,41 @@ export default function Home() {
               <List className="w-3.5 h-3.5 inline mr-1" />
               List
             </button>
+          </div>
+
+          {/* Mobile nav menu */}
+          <div className="sm:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                  <Menu className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/leaderboard" className="flex items-center gap-2 cursor-pointer">
+                    <Trophy className="w-4 h-4" />
+                    Leaderboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/hall-of-shame" className="flex items-center gap-2 cursor-pointer">
+                    <Skull className="w-4 h-4" />
+                    Hall of Shame
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/bureaucracy" className="flex items-center gap-2 cursor-pointer">
+                    <Building2 className="w-4 h-4" />
+                    Bureaucracy Tracker
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowFixed(!showFixed)} className="flex items-center gap-2 cursor-pointer">
+                  {showFixed ? '✅' : '👁️'}
+                  {showFixed ? 'Hide Fixed' : 'Show Fixed'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <Button
