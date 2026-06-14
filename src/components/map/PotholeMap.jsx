@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -49,21 +49,29 @@ const newPinIcon = L.divIcon({
 });
 
 function MapClickHandler({ onMapClick, isDropping }) {
+  const map = useMap();
   const isDroppingRef = useRef(isDropping);
   const onMapClickRef = useRef(onMapClick);
 
+  // Keep refs in sync on every render
   useEffect(() => {
     isDroppingRef.current = isDropping;
     onMapClickRef.current = onMapClick;
-  }, [isDropping, onMapClick]);
+  });
 
-  useMapEvents({
-    click(e) {
+  // Attach directly to Leaflet map, bypassing react-leaflet event system
+  useEffect(() => {
+    const handler = (e) => {
       if (isDroppingRef.current) {
         onMapClickRef.current(e.latlng);
       }
-    },
-  });
+    };
+    map.on('click', handler);
+    return () => {
+      map.off('click', handler);
+    };
+  }, [map]);
+
   return null;
 }
 
