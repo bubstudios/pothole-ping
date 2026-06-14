@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle, Zap } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle, Zap, Mail, CheckCircle, Loader2 } from 'lucide-react';
 import JurisdictionCard from './JurisdictionCard';
 import moment from 'moment';
 
@@ -35,6 +35,8 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingReport, setIsSendingReport] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
 
   useEffect(() => {
     loadComments();
@@ -62,6 +64,22 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
     setNewComment('');
     setIsSubmitting(false);
     loadComments();
+  };
+
+  const handleSubmitToAgency = async () => {
+    setIsSendingReport(true);
+    setSendResult(null);
+    try {
+      const res = await base44.functions.invoke('submitPotholeReport', { reportId: pothole.id });
+      if (res.data?.email === 'sent') {
+        setSendResult('sent');
+      } else {
+        setSendResult('failed');
+      }
+    } catch {
+      setSendResult('failed');
+    }
+    setIsSendingReport(false);
   };
 
   return (
@@ -189,6 +207,43 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
           </Button>
         )}
       </div>
+
+      {/* Submit to Agency */}
+      {pothole.submission_email && (
+        <div className="border rounded-lg p-3 space-y-2">
+          <h4 className="font-heading font-semibold text-sm flex items-center gap-1.5">
+            <Mail className="w-4 h-4" />
+            Submit to Agency
+          </h4>
+          {pothole.submission_status === 'email_sent' || sendResult === 'sent' ? (
+            <p className="text-xs text-green-600 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> Report emailed to {pothole.submission_email}
+            </p>
+          ) : sendResult === 'failed' ? (
+            <p className="text-xs text-red-500">Failed to send. Try again or call instead.</p>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                This jurisdiction accepts reports at <span className="font-medium">{pothole.submission_email}</span>
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 w-full"
+                onClick={handleSubmitToAgency}
+                disabled={isSendingReport}
+              >
+                {isSendingReport ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {isSendingReport ? 'Sending...' : 'Email Report to Agency'}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="border-t pt-4">
         <h3 className="font-heading font-semibold text-sm flex items-center gap-1.5 mb-3">

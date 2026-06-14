@@ -30,7 +30,7 @@ async function reverseGeocode(lat, lng) {
 
 async function lookupJurisdiction(lat, lng, address) {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `Find the responsible road maintenance authority for a pothole at this location:\nAddress: ${address}\nCoordinates: ${lat}, ${lng}\n\nDetermine:\n1. Whether this is inside a city/municipality, unincorporated county land, or on a state/federal highway\n2. The specific government entity responsible for road maintenance\n3. A phone number to call to report a pothole\n\nBe specific. For state highways, provide the state DOT number. For unincorporated areas, provide the county public works number.`,
+    prompt: `Find the responsible road maintenance authority for a pothole at this location:\nAddress: ${address}\nCoordinates: ${lat}, ${lng}\n\nDetermine:\n1. Whether this is inside a city/municipality, unincorporated county land, or on a state/federal highway\n2. The specific government entity responsible for road maintenance\n3. A phone number to call to report a pothole\n4. An email address where pothole/service requests can be submitted (public works, 311, or streets department)\n5. If this jurisdiction has an Open311 API, provide the endpoint URL and the service code for pothole requests\n\nBe specific. For state highways, provide the state DOT number. For unincorporated areas, provide the county public works number. If no email is publicly listed, leave it empty.`,
     add_context_from_internet: true,
     response_json_schema: {
       type: 'object',
@@ -39,6 +39,9 @@ async function lookupJurisdiction(lat, lng, address) {
         jurisdiction_type: { type: 'string', enum: ['city', 'county', 'state', 'federal', 'unknown'] },
         jurisdiction_phone: { type: 'string' },
         jurisdiction_details: { type: 'string' },
+        submission_email: { type: 'string' },
+        open311_endpoint: { type: 'string' },
+        open311_service_code: { type: 'string' },
       },
     },
     model: 'gemini_3_flash',
@@ -168,13 +171,22 @@ export default function Home() {
       jurisdiction_type: jurisdictionInfo?.jurisdiction_type || 'unknown',
       jurisdiction_phone: jurisdictionInfo?.jurisdiction_phone || '',
       jurisdiction_details: jurisdictionInfo?.jurisdiction_details || '',
+      submission_email: jurisdictionInfo?.submission_email || '',
       photo_url: photo_url || '',
     };
-    await base44.entities.PotholeReport.create(report);
+    const created = await base44.entities.PotholeReport.create(report);
     setNewPin(null);
     setJurisdictionInfo(null);
     setSidebarOpen(false);
     loadPotholes();
+
+    // Auto-submit if email is available
+    if (jurisdictionInfo?.submission_email) {
+      try {
+        await base44.functions.invoke('submitPotholeReport', { reportId: created.id });
+        loadPotholes();
+      } catch (e) {}
+    }
   };
 
   const handleCancelReport = () => {

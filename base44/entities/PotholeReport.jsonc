@@ -82,6 +82,26 @@
     "disputed_by": {
       "type": "string",
       "description": "ID of user who disputed the fix"
+    },
+    "submission_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "email_sent",
+        "open311_submitted",
+        "open311_acknowledged",
+        "open311_closed",
+        "failed"
+      ],
+      "default": "none"
+    },
+    "submission_email": {
+      "type": "string",
+      "description": "Email address for submitting reports to this jurisdiction"
+    },
+    "submission_details": {
+      "type": "string",
+      "description": "Details about how the report was submitted"
     }
   },
   "required": [
