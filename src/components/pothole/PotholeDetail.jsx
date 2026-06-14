@@ -22,7 +22,7 @@ const statusBadge = {
   fixed: 'bg-green-100 text-green-700',
 };
 
-export default function PotholeDetail({ pothole, onBack, onUpvote }) {
+export default function PotholeDetail({ pothole, onBack, onUpvote, onSeverityChange }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,8 +40,7 @@ export default function PotholeDetail({ pothole, onBack, onUpvote }) {
   };
 
   const handleSeverityChange = async (newSeverity) => {
-    await base44.entities.PotholeReport.update(pothole.id, { severity: newSeverity });
-    onUpvote(pothole.id); // triggers parent refresh via loadPotholes
+    onSeverityChange(pothole.id, newSeverity);
   };
 
   const handleAddComment = async () => {

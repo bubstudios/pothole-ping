@@ -153,6 +153,15 @@ export default function Home() {
     });
   };
 
+  const handleSeverityChange = async (id, newSeverity) => {
+    await base44.entities.PotholeReport.update(id, { severity: newSeverity });
+    loadPotholes();
+    setSelectedPothole((prev) => {
+      if (prev?.id !== id) return prev;
+      return { ...prev, severity: newSeverity };
+    });
+  };
+
   const startDropping = () => {
     setIsDropping(true);
     setIsVoiceListening(false);
@@ -313,6 +322,7 @@ export default function Home() {
                       setSidebarOpen(false);
                     }}
                     onUpvote={handleUpvote}
+                    onSeverityChange={handleSeverityChange}
                   />
                 )}
               </div>
@@ -321,12 +331,14 @@ export default function Home() {
         )}
       </div>
 
-      {/* Voice Report floating button */}
-      <VoiceReport
-        onVoiceReport={handleVoiceReport}
-        isListening={isVoiceListening}
-        onToggleListening={setIsVoiceListening}
-      />
+      {/* Voice Report floating button — hidden when sidebar is open */}
+      {!sidebarOpen && (
+        <VoiceReport
+          onVoiceReport={handleVoiceReport}
+          isListening={isVoiceListening}
+          onToggleListening={setIsVoiceListening}
+        />
+      )}
 
       {/* Mobile view toggle */}
       <div className="sm:hidden flex border-t bg-card">
