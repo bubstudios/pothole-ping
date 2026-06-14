@@ -10,28 +10,19 @@ const severityColors = {
   dangerous: '#b91c1c',
 };
 
-const statusIcons = {
-  reported: '🔴',
-  acknowledged: '🟡',
-  in_progress: '🟠',
-  fixed: '🟢',
-};
-
-function createPotholeIcon(severity, status) {
+function createPotholeIcon(severity) {
   const color = severityColors[severity] || '#f97316';
-  const emoji = statusIcons[status] || '🔴';
   return L.divIcon({
     className: 'custom-pothole-marker',
     html: `<div style="
-      width: 32px; height: 32px; border-radius: 50%;
+      width: 24px; height: 24px; border-radius: 50%;
       background: ${color}; border: 3px solid white;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; cursor: pointer;
-    ">${emoji}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -18],
+      cursor: pointer;
+    "></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -14],
   });
 }
 
@@ -114,7 +105,7 @@ export default function PotholeMap({
           <Marker
             key={p.id}
             position={[p.latitude, p.longitude]}
-            icon={createPotholeIcon(p.severity, p.status)}
+            icon={createPotholeIcon(p.severity)}
             eventHandlers={{ click: () => onPotholeClick?.(p) }}
           >
             <Popup>
