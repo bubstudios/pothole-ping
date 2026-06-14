@@ -7,9 +7,6 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import Home from '@/pages/Home';
-import Leaderboard from '@/pages/Leaderboard';
-import HallOfShame from '@/pages/HallOfShame';
-import BureaucracyTracker from '@/pages/BureaucracyTracker';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -18,8 +15,9 @@ const AuthenticatedApp = () => {
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-red-100 gap-2">
+        <div className="w-12 h-12 border-8 border-blue-500 border-t-yellow-500 rounded-full animate-spin"></div>
+        <p className="text-sm font-bold text-red-600">Loading app... (auth check)</p>
       </div>
     );
   }
@@ -31,19 +29,28 @@ const AuthenticatedApp = () => {
     } else if (authError.type === 'auth_required') {
       // Redirect to login automatically
       navigateToLogin();
-      return null;
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-background">
+          <p className="text-muted-foreground text-sm">Redirecting to login...</p>
+        </div>
+      );
     }
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <p className="text-muted-foreground text-sm">Error: {authError.message}</p>
+      </div>
+    );
   }
 
   // Render the main app
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route path="/hall-of-shame" element={<HallOfShame />} />
-      <Route path="/bureaucracy" element={<BureaucracyTracker />} />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <div className="min-h-screen bg-background">
+      <div className="p-4 bg-green-500 text-white font-bold">App Loaded Successfully</div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </div>
   );
 };
 
