@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle, Zap, CheckCircle, Loader2 } from 'lucide-react';
 import JurisdictionCard from './JurisdictionCard';
 import DamageReportForm from './DamageReportForm';
+import ShareButton from './ShareButton';
 import moment from 'moment';
 
 const severityBadge = {
@@ -160,6 +161,7 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
       <DamageReportForm potholeId={pothole.id} reportCreatedDate={pothole.created_date} />
 
       <div className="flex flex-wrap gap-2">
+        <ShareButton pothole={pothole} />
         <Button
           variant="outline"
           size="sm"

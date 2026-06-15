@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -279,6 +280,17 @@ export default function Home() {
         loadPotholes();
       } catch (e) {}
     }
+
+    // Send email receipt to the reporter
+    if (currentUser?.email && jurisdictionInfo?.jurisdiction_name) {
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: currentUser.email,
+          subject: `PotholePing: Report submitted to ${jurisdictionInfo.jurisdiction_name}`,
+          body: `Thanks for reporting a ${severity} pothole!\n\nLocation: ${jurisdictionInfo.address || `${newPin.lat}, ${newPin.lng}`}\nSubmitted to: ${jurisdictionInfo.jurisdiction_name}\n\nYour report helps keep the community safe. Track its status anytime in the PotholePing app.\n\n— The PotholePing Team`,
+        });
+      } catch (e) {}
+    }
   };
 
   const handleCancelReport = () => {
@@ -314,6 +326,8 @@ export default function Home() {
           fixes_marked: (rep.fixes_marked || 0) + 1,
         });
       }
+      // Celebrate!
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#f97316', '#fbbf24', '#3b82f6'] });
     } else if (pothole.status === 'fixed') {
       // Dispute — user says it's still there
       await base44.entities.PotholeReport.update(id, {

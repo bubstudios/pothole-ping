@@ -15,6 +15,7 @@ import Leaderboard from '@/pages/Leaderboard';
 import HallOfShame from '@/pages/HallOfShame';
 import BureaucracyTracker from '@/pages/BureaucracyTracker';
 import WatchZones from '@/pages/WatchZones';
+import PublicMap from '@/pages/PublicMap';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -37,6 +38,7 @@ const AuthenticatedApp = () => {
 <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/map" element={<PublicMap />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/" element={<Home />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
