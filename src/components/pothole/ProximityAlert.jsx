@@ -21,9 +21,13 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
   const [watchId, setWatchId] = useState(null);
   const alertedIds = useRef(new Set());
 
-  // Clear alert history when pothole list changes (new reports, etc)
+  // Prune alert history when potholes are removed — but keep existing IDs
+  // so driving past the same pothole doesn't re-trigger avoidance recordings
   useEffect(() => {
-    alertedIds.current.clear();
+    const currentIds = new Set(potholes.map((p) => p.id));
+    for (const id of alertedIds.current) {
+      if (!currentIds.has(id)) alertedIds.current.delete(id);
+    }
   }, [potholes]);
 
   // Start/stop watching position

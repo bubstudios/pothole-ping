@@ -159,40 +159,60 @@ function SpeechListener({ onWakeWord }) {
   useEffect(() => {
     if (!SpeechRecognitionAPI) return;
 
-    const recognition = new SpeechRecognitionAPI();
+    let recognition = new SpeechRecognitionAPI();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
     let stopped = false;
 
-    recognition.onresult = (event) => {
-      if (stopped) return;
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript.toLowerCase();
-        for (const phrase of WAKE_PHRASES) {
-          if (transcript.includes(phrase)) {
-            onWakeWordRef.current();
-            return;
+    const configureRecognition = (rec) => {
+      rec.onresult = (event) => {
+        if (stopped) return;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript.toLowerCase();
+          for (const phrase of WAKE_PHRASES) {
+            if (transcript.includes(phrase)) {
+              onWakeWordRef.current();
+              return;
+            }
           }
         }
+      };
+
+      rec.onerror = () => {
+        if (stopped) return;
+        setTimeout(() => {
+          if (!stopped) { try { rec.start(); } catch {} }
+        }, 1000);
+      };
+
+      rec.onend = () => {
+        if (!stopped) { try { rec.start(); } catch {} }
+      };
+    };
+
+    configureRecognition(recognition);
+    recognition.start();
+
+    // Restart speech recognition when tab becomes visible again
+    // (browsers pause it when the tab is hidden, e.g. switching to Uber/Lyft)
+    const handleVisibility = () => {
+      if (stopped) return;
+      if (document.visibilityState === 'visible') {
+        try { recognition.stop(); } catch {}
+        recognition = new SpeechRecognitionAPI();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        configureRecognition(recognition);
+        recognition.start();
       }
     };
-
-    recognition.onerror = () => {
-      if (stopped) return;
-      setTimeout(() => {
-        if (!stopped) { try { recognition.start(); } catch {} }
-      }, 1000);
-    };
-
-    recognition.onend = () => {
-      if (!stopped) { try { recognition.start(); } catch {} }
-    };
-
-    recognition.start();
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       stopped = true;
+      document.removeEventListener('visibilitychange', handleVisibility);
       try { recognition.stop(); } catch {}
     };
   }, []);
