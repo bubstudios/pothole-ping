@@ -1,0 +1,54 @@
+{
+  "name": "VehicleDamage",
+  "type": "object",
+  "properties": {
+    "pothole_id": {
+      "type": "string",
+      "description": "ID of the pothole that caused the damage"
+    },
+    "damage_type": {
+      "type": "string",
+      "enum": [
+        "tire",
+        "rim",
+        "alignment",
+        "suspension",
+        "body",
+        "other"
+      ],
+      "description": "Type of vehicle damage incurred"
+    },
+    "cost_estimate": {
+      "type": "number",
+      "description": "Estimated repair cost in USD"
+    },
+    "description": {
+      "type": "string",
+      "description": "Details about the damage"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Optional photo of the damage"
+    },
+    "damage_date": {
+      "type": "string",
+      "description": "When the damage occurred (ISO date)"
+    },
+    "claim_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "packet_generated",
+        "filed",
+        "reimbursed",
+        "denied"
+      ],
+      "default": "none"
+    }
+  },
+  "required": [
+    "pothole_id",
+    "damage_type",
+    "cost_estimate"
+  ]
+}

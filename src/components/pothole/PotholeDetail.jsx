@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle, Zap, CheckCircle, Loader2 } from 'lucide-react';
 import JurisdictionCard from './JurisdictionCard';
+import DamageReportForm from './DamageReportForm';
 import moment from 'moment';
 
 const severityBadge = {
@@ -155,6 +156,8 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
           <p className="text-xs mt-1">No one has confirmed this report in over 30 days. Please verify and confirm if it still exists.</p>
         </div>
       )}
+
+      <DamageReportForm potholeId={pothole.id} reportCreatedDate={pothole.created_date} />
 
       <div className="flex flex-wrap gap-2">
         <Button
