@@ -31,6 +31,11 @@ const JURISDICTION_OVERRIDES = [
     phone: '3148397652',
     email: 'jtimme@florissantmo.com',
   },
+  {
+    match: 'St. Louis County',
+    email: 'slrp@stlouiscountymo.gov',
+    phone: '3146158538',
+  },
 ];
 
 function applyJurisdictionOverrides(info) {
