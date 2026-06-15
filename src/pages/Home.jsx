@@ -551,8 +551,13 @@ export default function Home() {
               isDropping={isDropping}
               onPotholeClick={handlePotholeClick}
               onNewPinClick={handleNewPinClick}
+              onVoicePinClick={(pin) => {
+                setPendingVoicePins((prev) => prev.filter((p) => p.lat !== pin.lat || p.lng !== pin.lng));
+                openReportAt(pin.lat, pin.lng);
+              }}
               flyToCenter={flyToCenter}
               userPosition={userPosition}
+              pendingVoicePins={pendingVoicePins}
             >
               <HeatmapLayer
                 potholes={displayPotholes}

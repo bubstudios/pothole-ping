@@ -105,6 +105,19 @@ function FollowUserPosition({ position }) {
   return null;
 }
 
+const voicePinIcon = L.divIcon({
+  className: 'voice-pin-marker',
+  html: `<div style="
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #8b5cf6; border: 3px solid white;
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.3), 0 4px 12px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; animation: pulse 1.5s infinite;
+  ">🎤</div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+});
+
 const userLocationIcon = L.divIcon({
   className: 'user-location-marker',
   html: `<div style="
@@ -123,8 +136,10 @@ export default function PotholeMap({
   isDropping,
   onPotholeClick,
   onNewPinClick,
+  onVoicePinClick,
   flyToCenter,
   userPosition,
+  pendingVoicePins = [],
   children,
 }) {
   const defaultCenter = [38.7, -90.3]; // STL area
@@ -173,6 +188,15 @@ export default function PotholeMap({
             eventHandlers={{ click: () => onNewPinClick?.() }}
           />
         )}
+
+        {pendingVoicePins.filter(p => !isNaN(p.lat) && !isNaN(p.lng)).map((pin, i) => (
+          <Marker
+            key={`voice-${pin.lat}-${pin.lng}-${i}`}
+            position={[pin.lat, pin.lng]}
+            icon={voicePinIcon}
+            eventHandlers={{ click: () => onVoicePinClick?.(pin) }}
+          />
+        ))}
 
         {userPosition && (
           <Marker
