@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Heart, Coffee, Gift, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 const TIERS = [
   { amount: 3, label: 'Coffee', icon: Coffee, description: 'Buy the team a coffee' },
@@ -8,44 +7,23 @@ const TIERS = [
   { amount: 25, label: 'Road Hero', icon: Heart, description: 'Support road safety in your city' },
 ];
 
-export default function SupportButton({ compact = false }) {
+export default function SupportButton() {
   const [open, setOpen] = useState(false);
 
   const handleSupport = (amount) => {
-    if (compact) {
-      // External link for compact header usage
-      window.open(`https://potholeping.com/support?amount=${amount}`, '_blank');
-      return;
-    }
-    // Inline thank-you
     setOpen(false);
-    alert(`Thanks for the support! A ${amount} contribution helps keep pothole reporting free for everyone. ❤️`);
+    window.open(`https://potholeping.com/support?amount=${amount}`, '_blank');
   };
-
-  if (compact) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-pink-600 border-pink-200 hover:bg-pink-50 transition-colors"
-        title="Support PotholePing"
-      >
-        <Heart className="w-3.5 h-3.5" />
-        Support
-      </button>
-    );
-  }
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
         onClick={() => setOpen(true)}
-        className="gap-1.5 text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+        className="absolute top-4 right-4 z-[1001] w-9 h-9 rounded-full bg-pink-500 text-white shadow-lg hover:bg-pink-600 transition-colors flex items-center justify-center"
+        title="Support PotholePing"
       >
         <Heart className="w-4 h-4" />
-        Support Us
-      </Button>
+      </button>
 
       {open && (
         <div className="fixed inset-0 bg-black/40 z-[2000] flex items-center justify-center p-4" onClick={() => setOpen(false)}>

@@ -483,7 +483,6 @@ export default function Home() {
             <MessageCircle className="w-3.5 h-3.5" />
             Neighborhoods
           </Link>
-          <SupportButton compact />
           <div className="hidden sm:flex border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('map')}
@@ -606,6 +605,7 @@ export default function Home() {
             )}
 
             <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />
+            <SupportButton />
             {!sidebarOpen && <HeatmapControls
               enabled={heatmapEnabled}
               onToggle={() => setHeatmapEnabled(!heatmapEnabled)}
