@@ -16,6 +16,7 @@ import HallOfShame from '@/pages/HallOfShame';
 import BureaucracyTracker from '@/pages/BureaucracyTracker';
 import WatchZones from '@/pages/WatchZones';
 import PublicMap from '@/pages/PublicMap';
+import Donate from '@/pages/Donate';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
         <Route path="/hall-of-shame" element={<HallOfShame />} />
         <Route path="/bureaucracy" element={<BureaucracyTracker />} />
         <Route path="/watch-zones" element={<WatchZones />} />
+        <Route path="/donate" element={<Donate />} />
       </Route>
     </Routes>
   );

@@ -1,0 +1,35 @@
+{
+  "name": "Donation",
+  "type": "object",
+  "properties": {
+    "amount": {
+      "type": "number",
+      "description": "Donation amount in USD"
+    },
+    "recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Monthly recurring donation"
+    },
+    "message": {
+      "type": "string",
+      "description": "Optional message from donor"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "donor_name": {
+      "type": "string",
+      "description": "Display name of donor"
+    }
+  },
+  "required": [
+    "amount"
+  ]
+}
