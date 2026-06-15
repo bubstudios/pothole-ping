@@ -107,7 +107,16 @@ export default function Home() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
-  const [pendingVoicePins, setPendingVoicePins] = useState([]);
+  const [pendingVoicePins, setPendingVoicePins] = useState(() => {
+    try {
+      const saved = localStorage.getItem('potholeping_voice_pins');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('potholeping_voice_pins', JSON.stringify(pendingVoicePins));
+  }, [pendingVoicePins]);
 
   useEffect(() => {
     loadPotholes();
