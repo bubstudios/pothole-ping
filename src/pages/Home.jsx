@@ -112,8 +112,11 @@ export default function Home() {
   useEffect(() => {
     loadPotholes();
     loadCurrentUser();
-    loadAvoidances();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) loadAvoidances();
+  }, [currentUser]);
 
   const loadCurrentUser = async () => {
     try {
@@ -144,7 +147,8 @@ export default function Home() {
 
   const loadAvoidances = async () => {
     try {
-      const data = await base44.entities.PotholeAvoidance.list('-created_date', 500);
+      if (!currentUser) return;
+      const data = await base44.entities.PotholeAvoidance.filter({ created_by_id: currentUser.id }, '-created_date', 500);
       const total = data.reduce((sum, a) => sum + (Number(a.estimated_savings) || 0), 0);
       setTotalSavings(total);
       setAvoidanceCount(data.length);
