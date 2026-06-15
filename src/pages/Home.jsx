@@ -22,6 +22,7 @@ import ProximityAlert from '@/components/pothole/ProximityAlert';
 import DuplicateWarning from '@/components/pothole/DuplicateWarning';
 import FeedbackModal from '@/components/FeedbackModal';
 import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
+import FloatingCommuteWidget from '@/components/pothole/FloatingCommuteWidget';
 
 // Verified jurisdiction contact overrides — applied after LLM lookup
 const JURISDICTION_OVERRIDES = [
@@ -101,6 +102,7 @@ export default function Home() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
+  const [commuteMode, setCommuteMode] = useState(false);
 
   useEffect(() => {
     loadPotholes();
@@ -411,6 +413,17 @@ export default function Home() {
             onAvoidance={handleAvoidance}
           />
           <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />
+          <button
+            onClick={() => setCommuteMode(!commuteMode)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              commuteMode
+                ? 'bg-green-50 border-green-300 text-green-700'
+                : 'text-muted-foreground border-border hover:bg-muted'
+            }`}
+            title="Floating commute widget for use over navigation apps"
+          >
+            {commuteMode ? '🚗 Commute On' : '🚗 Commute'}
+          </button>
           <Link
             to="/leaderboard"
             className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-muted-foreground border-border hover:bg-muted transition-colors"
@@ -688,6 +701,20 @@ export default function Home() {
           onVoiceReport={handleVoiceReport}
           isListening={isVoiceListening}
           onToggleListening={setIsVoiceListening}
+        />
+      )}
+
+      {commuteMode && (
+        <FloatingCommuteWidget
+          potholes={displayPotholes}
+          userPosition={userPosition}
+          nearestPothole={dangerNearby?.pothole || null}
+          nearestDistance={dangerNearby?.distance || null}
+          isVoiceListening={isVoiceListening}
+          onToggleVoice={() => setIsVoiceListening(!isVoiceListening)}
+          onToggleMap={() => setCommuteMode(false)}
+          totalSavings={totalSavings}
+          dangerNearby={dangerNearby}
         />
       )}
 
