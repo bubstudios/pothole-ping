@@ -73,11 +73,35 @@ function MapClickHandler({ onMapClick, isDropping }) {
 
 function FlyToLocation({ center }) {
   const map = useMap();
+  const lastCenter = useRef(null);
   useEffect(() => {
     if (center && !isNaN(center[0]) && !isNaN(center[1])) {
-      map.flyTo(center, 15, { duration: 1 });
+      const key = `${center[0]},${center[1]}`;
+      // Only fly if the center actually changed to a new location
+      if (key !== lastCenter.current) {
+        lastCenter.current = key;
+        map.flyTo(center, 15, { duration: 1 });
+      }
     }
   }, [center, map]);
+  return null;
+}
+
+function FollowUserPosition({ position }) {
+  const map = useMap();
+  const lastMove = useRef(0);
+
+  useEffect(() => {
+    if (!position || isNaN(position.lat) || isNaN(position.lng)) return;
+
+    // Only pan if enough time has passed (smooth following, not jittery)
+    const now = Date.now();
+    if (now - lastMove.current > 2000) {
+      lastMove.current = now;
+      map.panTo([position.lat, position.lng], { animate: true, duration: 1.5 });
+    }
+  }, [position?.lat, position?.lng, map]);
+
   return null;
 }
 
