@@ -18,34 +18,38 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
 
   useEffect(() => { return () => { setError(''); }; }, []);
 
-  const initMic = useCallback(async () => {
+  const initMic = useCallback(async (needsUserGesture = false) => {
     if (!SpeechRecognitionAPI) {
       setStatus('error');
       setError('Voice not supported in this browser. Try Chrome or Edge.');
       return false;
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop());
-      setError('');
-      setStatus('listening');
-      setMicReady(true);
-      return true;
-    } catch (e) {
-      setStatus('error');
-      if (e.name === 'NotAllowedError') {
-        setError('Microphone access denied. Allow mic in your browser settings.');
-      } else {
-        setError('No microphone found. Check your device.');
+    // Only pre-check mic permission when triggered by a user gesture (click)
+    // Auto-start skips this — SpeechRecognition.start() handles its own permission
+    if (needsUserGesture) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (e) {
+        setStatus('error');
+        if (e.name === 'NotAllowedError') {
+          setError('Microphone access denied. Allow mic in your browser settings.');
+        } else {
+          setError('No microphone found. Check your device.');
+        }
+        return false;
       }
-      return false;
     }
+    setError('');
+    setStatus('listening');
+    setMicReady(true);
+    return true;
   }, []);
 
-  // Auto-start on mount if isListening defaults to true
+  // Auto-start on mount: skip getUserMedia, let SpeechRecognition handle it
   useEffect(() => {
     if (isListening && !micReady && status === 'idle') {
-      initMic();
+      initMic(false);
     }
   }, [isListening, micReady, status, initMic]);
 
@@ -67,7 +71,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       return;
     }
 
-    const ok = await initMic();
+    const ok = await initMic(true);
     if (!ok) return;
     onToggleListening(true);
   };
