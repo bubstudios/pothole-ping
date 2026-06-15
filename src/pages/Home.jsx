@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -161,10 +161,18 @@ export default function Home() {
       const total = data.reduce((sum, a) => sum + (Number(a.estimated_savings) || 0), 0);
       setTotalSavings(total);
       setAvoidanceCount(data.length);
+      // Seed the dedup set so existing avoidances don't re-trigger
+      avoidedIdsRef.current = new Set(data.map((a) => a.pothole_id));
     } catch (e) {}
   };
 
+  const avoidedIdsRef = useRef(new Set());
+
   const handleAvoidance = async (pothole, distanceMeters) => {
+    // Only count each pothole once per user — lifetime
+    if (avoidedIdsRef.current.has(pothole.id)) return;
+    avoidedIdsRef.current.add(pothole.id);
+
     const savings = SEVERITY_COSTS[pothole.severity] || 150;
     try {
       await base44.entities.PotholeAvoidance.create({
