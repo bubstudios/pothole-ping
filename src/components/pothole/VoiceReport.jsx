@@ -5,9 +5,8 @@ const WAKE_PHRASES = ['pothole ping'];
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 export default function VoiceReport({ onVoiceReport, isListening, onToggleListening }) {
-  const [status, setStatus] = useState('idle'); // idle | listening | gps | triggered | error
+  const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
-  const [micReady, setMicReady] = useState(false);
   const statusRef = useRef(status);
   const onVoiceReportRef = useRef(onVoiceReport);
   const onToggleListeningRef = useRef(onToggleListening);
@@ -16,42 +15,15 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
   useEffect(() => { onVoiceReportRef.current = onVoiceReport; }, [onVoiceReport]);
   useEffect(() => { onToggleListeningRef.current = onToggleListening; }, [onToggleListening]);
 
-  useEffect(() => { return () => { setError(''); }; }, []);
-
-  const initMic = useCallback(async (needsUserGesture = false) => {
-    if (!SpeechRecognitionAPI) {
-      setStatus('error');
-      setError('Voice not supported in this browser. Try Chrome or Edge.');
-      return false;
-    }
-    // Only pre-check mic permission when triggered by a user gesture (click)
-    // Auto-start skips this — SpeechRecognition.start() handles its own permission
-    if (needsUserGesture) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (e) {
-        setStatus('error');
-        if (e.name === 'NotAllowedError') {
-          setError('Microphone access denied. Allow mic in your browser settings.');
-        } else {
-          setError('No microphone found. Check your device.');
-        }
-        return false;
-      }
-    }
-    setError('');
-    setStatus('listening');
-    setMicReady(true);
-    return true;
-  }, []);
-
-  // Auto-start on mount: skip getUserMedia, let SpeechRecognition handle it
+  // On mount, go straight to listening if isListening is true
   useEffect(() => {
-    if (isListening && !micReady && status === 'idle') {
-      initMic(false);
+    if (isListening && !SpeechRecognitionAPI) {
+      setStatus('error');
+      setError('Voice not supported. Try Chrome or Edge.');
+    } else if (isListening && status === 'idle') {
+      setStatus('listening');
     }
-  }, [isListening, micReady, status, initMic]);
+  }, [isListening, status]);
 
   const getPosition = () =>
     new Promise((resolve, reject) => {
@@ -62,18 +34,16 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       });
     });
 
-  const handleToggle = async () => {
+  const handleToggle = () => {
     if (isListening) {
-      setMicReady(false);
       onToggleListening(false);
       setStatus('idle');
       setError('');
-      return;
+    } else {
+      onToggleListening(true);
+      setStatus('listening');
+      setError('');
     }
-
-    const ok = await initMic(true);
-    if (!ok) return;
-    onToggleListening(true);
   };
 
   const handleWakeWord = useCallback(async () => {
@@ -83,10 +53,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       const pos = await getPosition();
       setStatus('triggered');
       onVoiceReportRef.current(pos.coords.latitude, pos.coords.longitude);
-      setTimeout(() => {
-        setStatus('listening');
-        onToggleListeningRef.current(true);
-      }, 2000);
+      setTimeout(() => setStatus('listening'), 2000);
     } catch {
       setError('GPS unavailable. Try again.');
       setStatus('listening');
@@ -130,13 +97,14 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       >
         {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
       </button>
-      {micReady && <SpeechListener onWakeWord={handleWakeWord} />}
+      {isListening && <SpeechListener onWakeWord={handleWakeWord} />}
     </div>
   );
 }
 
 function SpeechListener({ onWakeWord }) {
   const onWakeWordRef = useRef(onWakeWord);
+  const recogRef = useRef(null);
   useEffect(() => { onWakeWordRef.current = onWakeWord; });
 
   useEffect(() => {
@@ -146,6 +114,7 @@ function SpeechListener({ onWakeWord }) {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recogRef.current = recognition;
 
     recognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -160,18 +129,25 @@ function SpeechListener({ onWakeWord }) {
     };
 
     recognition.onerror = () => {
+      // Browser may block auto-start without user gesture; retry on next interaction
       setTimeout(() => {
         try { recognition.start(); } catch {}
-      }, 500);
+      }, 1000);
     };
 
     recognition.onend = () => {
       try { recognition.start(); } catch {}
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch {
+      // Silently fail — browser requires user gesture, retry on toggle
+    }
 
-    return () => recognition.stop();
+    return () => {
+      try { recognition.stop(); } catch {}
+    };
   }, []);
 
   return null;
