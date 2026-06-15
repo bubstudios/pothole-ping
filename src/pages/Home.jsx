@@ -21,6 +21,30 @@ import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
 import DuplicateWarning from '@/components/pothole/DuplicateWarning';
 
+// Verified jurisdiction contact overrides — applied after LLM lookup
+const JURISDICTION_OVERRIDES = [
+  {
+    match: 'Florissant',
+    phone: '3148397652',
+    email: 'jtimme@florissantmo.com',
+  },
+];
+
+function applyJurisdictionOverrides(info) {
+  if (!info?.jurisdiction_name) return info;
+  const override = JURISDICTION_OVERRIDES.find(
+    (o) => info.jurisdiction_name.toLowerCase().includes(o.match.toLowerCase())
+  );
+  if (override) {
+    return {
+      ...info,
+      jurisdiction_phone: override.phone,
+      submission_email: override.email,
+    };
+  }
+  return info;
+}
+
 async function reverseGeocode(lat, lng) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
   const res = await fetch(url);
@@ -146,7 +170,7 @@ export default function Home() {
 
     try {
       const info = await lookupJurisdiction(lat, lng, address);
-      setJurisdictionInfo((prev) => ({ ...prev, ...info }));
+      setJurisdictionInfo((prev) => ({ ...prev, ...applyJurisdictionOverrides(info) }));
     } catch (e) {}
     setIsLoadingJurisdiction(false);
   }, [potholes]);
@@ -583,7 +607,7 @@ export default function Home() {
                         setJurisdictionInfo({ address });
                         try {
                           const info = await lookupJurisdiction(pin.lat, pin.lng, address);
-                          setJurisdictionInfo((prev) => ({ ...prev, ...info }));
+                          setJurisdictionInfo((prev) => ({ ...prev, ...applyJurisdictionOverrides(info) }));
                         } catch (e) {}
                         setIsLoadingJurisdiction(false);
                       })();
