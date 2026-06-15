@@ -81,6 +81,17 @@ function FlyToLocation({ center }) {
   return null;
 }
 
+const userLocationIcon = L.divIcon({
+  className: 'user-location-marker',
+  html: `<div style="
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #3b82f6; border: 3px solid white;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.35), 0 2px 8px rgba(0,0,0,0.3);
+  "></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
 export default function PotholeMap({
   potholes = [],
   onMapClick,
@@ -89,6 +100,7 @@ export default function PotholeMap({
   onPotholeClick,
   onNewPinClick,
   flyToCenter,
+  userPosition,
   children,
 }) {
   const defaultCenter = [38.7, -90.3]; // STL area
@@ -134,6 +146,13 @@ export default function PotholeMap({
             position={[newPin.lat, newPin.lng]}
             icon={newPinIcon}
             eventHandlers={{ click: () => onNewPinClick?.() }}
+          />
+        )}
+
+        {userPosition && (
+          <Marker
+            position={[userPosition.lat, userPosition.lng]}
+            icon={userLocationIcon}
           />
         )}
         {children}

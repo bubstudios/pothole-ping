@@ -64,6 +64,7 @@ export default function Home() {
   const [showFixed, setShowFixed] = useState(false);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
+  const [userPosition, setUserPosition] = useState(null);
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [heatmapSeverity, setHeatmapSeverity] = useState('all');
   const [heatmapTimeRange, setHeatmapTimeRange] = useState('all');
@@ -295,6 +296,13 @@ export default function Home() {
     });
   };
 
+  // Auto-enable proximity alerts when voice listening starts (user is driving)
+  useEffect(() => {
+    if (isVoiceListening) {
+      setProximityAlertsOn(true);
+    }
+  }, [isVoiceListening]);
+
   const startDropping = () => {
     setIsDropping(true);
     setIsVoiceListening(false);
@@ -344,6 +352,7 @@ export default function Home() {
             potholes={displayPotholes}
             isActive={proximityAlertsOn}
             onToggle={() => setProximityAlertsOn(!proximityAlertsOn)}
+            onLocationChange={setUserPosition}
           />
           <Link
             to="/leaderboard"
@@ -459,6 +468,7 @@ export default function Home() {
               onPotholeClick={handlePotholeClick}
               onNewPinClick={handleNewPinClick}
               flyToCenter={flyToCenter}
+              userPosition={userPosition}
             >
               <HeatmapLayer
                 potholes={displayPotholes}
