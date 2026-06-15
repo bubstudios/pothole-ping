@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Heart, Coffee, Gift, ArrowLeft, ArrowRight, Check, Share2, Users, Wrench, Shield, Server, MessageCircle, Loader2, Repeat } from 'lucide-react';
+import { Heart, Coffee, Gift, ArrowLeft, ArrowRight, Check, Share2, Users, Wrench, Shield, Server, MessageCircle, Loader2, Repeat, ExternalLink } from 'lucide-react';
 
 const PRESET_TIERS = [
   { amount: 3, label: 'Coffee', icon: Coffee, description: 'Fuel the team' },
@@ -202,6 +202,7 @@ export default function Donate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [potholesFixed, setPotholesFixed] = useState(0);
   const [donorCount, setDonorCount] = useState(0);
+  const [iframeBlocked, setIframeBlocked] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -234,6 +235,13 @@ export default function Donate() {
 
   const handleSubmit = async () => {
     if (!amount || amount < 1) return;
+
+    // Stripe checkout doesn't work inside the dashboard iframe
+    if (window.self !== window.top) {
+      setIframeBlocked(true);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -278,7 +286,33 @@ export default function Donate() {
         </Link>
 
         <div className="bg-card border rounded-2xl shadow-xl p-6">
-          {step === 'tiers' && (
+          {iframeBlocked && (
+            <div className="space-y-4 text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+                <ExternalLink className="w-7 h-7 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-lg">Open in your browser</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Secure checkout works only in a full browser tab — not inside this preview.
+                </p>
+              </div>
+              <Button
+                onClick={() => window.open(window.location.href, '_blank')}
+                className="gap-2 w-full"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open Published App
+              </Button>
+              <button
+                onClick={() => setIframeBlocked(false)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Go back
+              </button>
+            </div>
+          )}
+          {!iframeBlocked && step === 'tiers' && (
             <StepTiers
               onSelect={handleSelect}
               onCustom={handleCustom}
@@ -289,11 +323,11 @@ export default function Donate() {
             />
           )}
 
-          {step === 'why' && (
+          {!iframeBlocked && step === 'why' && (
             <StepWhy potholesFixed={potholesFixed} donorCount={donorCount} />
           )}
 
-          {step === 'why' && (
+          {!iframeBlocked && step === 'why' && (
             <div className="mt-6 flex gap-3">
               <Button variant="outline" onClick={() => setStep('tiers')} className="gap-1">
                 <ArrowLeft className="w-4 h-4" />
@@ -306,7 +340,7 @@ export default function Donate() {
             </div>
           )}
 
-          {step === 'message' && (
+          {!iframeBlocked && step === 'message' && (
             <StepMessage
               message={message}
               setMessage={setMessage}
@@ -320,7 +354,7 @@ export default function Donate() {
             />
           )}
 
-          {step === 'thanks' && (
+          {!iframeBlocked && step === 'thanks' && (
             <StepThankYou
               amount={amount}
               recurring={recurring}
