@@ -14,6 +14,7 @@ function haversineMeters(lat1, lng1, lat2, lng2) {
 
 const STOP_THRESHOLD_METERS = 20;
 const STOP_DURATION_MS = 2 * 60 * 1000; // 2 minutes
+const MIN_TRAVEL_METERS = 200; // must be this far from pin before stop counts
 
 export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
   const [isWatching, setIsWatching] = useState(false);
@@ -21,6 +22,7 @@ export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
   const lastPosition = useRef(null);
   const watchId = useRef(null);
   const triggered = useRef(false);
+  const furthestFromPin = useRef(0);
 
   // Start watching when a pending pin appears
   useEffect(() => {
@@ -41,10 +43,19 @@ export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
     stationarySince.current = null;
     lastPosition.current = null;
     triggered.current = false;
+    furthestFromPin.current = 0;
 
     const id = navigator.geolocation.watchPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+        // Track how far we've traveled from the pin
+        if (pendingPin) {
+          const distFromPin = haversineMeters(pendingPin.lat, pendingPin.lng, loc.lat, loc.lng);
+          if (distFromPin > furthestFromPin.current) {
+            furthestFromPin.current = distFromPin;
+          }
+        }
 
         if (lastPosition.current) {
           const moved = haversineMeters(
@@ -53,11 +64,14 @@ export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
           );
 
           if (moved < STOP_THRESHOLD_METERS) {
-            // Staying still — start the clock if not already ticking
-            if (!stationarySince.current) {
+            // Staying still — only count if we've actually traveled away from the pin first
+            if (furthestFromPin.current < MIN_TRAVEL_METERS) {
+              // Still near the pothole — likely a stoplight, ignore
+              stationarySince.current = null;
+            } else if (!stationarySince.current) {
               stationarySince.current = Date.now();
             } else if (Date.now() - stationarySince.current >= STOP_DURATION_MS) {
-              // Stopped for 2+ minutes — trigger prompt
+              // Stopped for 2+ minutes after traveling away from pin — trigger prompt
               triggered.current = true;
               stopWatching();
               const minutesAgo = Math.round((Date.now() - (pendingPin?.time || Date.now())) / 60000);
