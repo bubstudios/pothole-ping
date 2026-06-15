@@ -13,7 +13,7 @@ function haversineMeters(lat1, lng1, lat2, lng2) {
 }
 
 const STOP_THRESHOLD_METERS = 20;
-const STOP_DURATION_MS = 2 * 60 * 1000; // 2 minutes
+const STOP_DURATION_MS = 5 * 60 * 1000; // 5 minutes — skip stoplights
 const MIN_TRAVEL_METERS = 200; // must be this far from pin before stop counts
 
 export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
