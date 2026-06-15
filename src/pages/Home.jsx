@@ -20,6 +20,7 @@ import PotholeListItem from '@/components/pothole/PotholeListItem';
 import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
 import DuplicateWarning from '@/components/pothole/DuplicateWarning';
+import DelayedReportPrompt from '@/components/pothole/DelayedReportPrompt';
 import FeedbackModal from '@/components/FeedbackModal';
 import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
 
@@ -101,6 +102,7 @@ export default function Home() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
+  const [pendingVoicePin, setPendingVoicePin] = useState(null);
 
   useEffect(() => {
     loadPotholes();
@@ -214,6 +216,7 @@ export default function Home() {
     setIsVoiceListening(false);
     setIsDropping(false);
     setNewPin({ lat, lng });
+    setPendingVoicePin({ lat, lng, time: Date.now() });
     setSelectedPothole(null);
     setDuplicateCandidate(null);
     setSidebarOpen(false);
@@ -224,6 +227,7 @@ export default function Home() {
 
   const handleNewPinClick = useCallback(() => {
     if (!newPin) return;
+    setPendingVoicePin(null);
     openReportAt(newPin.lat, newPin.lng);
   }, [newPin, openReportAt]);
 
@@ -246,6 +250,7 @@ export default function Home() {
     };
     const created = await base44.entities.PotholeReport.create(report);
     setNewPin(null);
+    setPendingVoicePin(null);
     setJurisdictionInfo(null);
     setSidebarOpen(false);
     loadPotholes();
@@ -261,6 +266,7 @@ export default function Home() {
 
   const handleCancelReport = () => {
     setNewPin(null);
+    setPendingVoicePin(null);
     setJurisdictionInfo(null);
     setIsLoadingJurisdiction(false);
     setDuplicateCandidate(null);
@@ -340,6 +346,13 @@ export default function Home() {
       return { ...prev, ...updates };
     });
   };
+
+  const handleDelayedPrompt = useCallback((pin) => {
+    if (!pin) return;
+    setFlyToCenter([pin.lat, pin.lng]);
+    // Open the report form for this pin
+    openReportAt(pin.lat, pin.lng);
+  }, [openReportAt]);
 
   const handleSeverityChange = async (id, newSeverity) => {
     await base44.entities.PotholeReport.update(id, { severity: newSeverity });
@@ -690,6 +703,11 @@ export default function Home() {
           onToggleListening={setIsVoiceListening}
         />
       )}
+
+      <DelayedReportPrompt
+        pendingPin={pendingVoicePin}
+        onPrompt={handleDelayedPrompt}
+      />
 
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
 
