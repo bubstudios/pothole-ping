@@ -143,6 +143,7 @@ export default function PotholeMap({
         />
         <MapClickHandler onMapClick={onMapClick} isDropping={isDropping} />
         {flyToCenter && <FlyToLocation center={flyToCenter} />}
+        <FollowUserPosition position={userPosition} />
 
         {potholes.filter(p => !isNaN(p.latitude) && !isNaN(p.longitude)).map((p) => (
           <Marker
