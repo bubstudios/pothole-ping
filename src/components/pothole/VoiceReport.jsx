@@ -11,11 +11,13 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
   const statusRef = useRef(status);
   const onVoiceReportRef = useRef(onVoiceReport);
   const onToggleListeningRef = useRef(onToggleListening);
+  const isListeningRef = useRef(isListening);
   const gestureGrantedRef = useRef(false);
 
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { onVoiceReportRef.current = onVoiceReport; }, [onVoiceReport]);
   useEffect(() => { onToggleListeningRef.current = onToggleListening; }, [onToggleListening]);
+  useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
 
   // On mount: check if mic permission is already granted (from a previous session).
   // If yes → auto-start listening. If no → wait for a tap.
@@ -86,13 +88,16 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
 
   const handleWakeWord = useCallback(async () => {
     if (statusRef.current === 'gps' || statusRef.current === 'triggered') return;
+    if (!isListeningRef.current) return;
     setStatus('gps');
     try {
       const pos = await getPosition();
+      if (!isListeningRef.current) return; // mic turned off during GPS
       setStatus('triggered');
       onVoiceReportRef.current(pos.coords.latitude, pos.coords.longitude);
-      setTimeout(() => setStatus('listening'), 2000);
+      setTimeout(() => { if (isListeningRef.current) setStatus('listening'); }, 2000);
     } catch {
+      if (!isListeningRef.current) return;
       setError('GPS unavailable. Try again.');
       setStatus('listening');
       setTimeout(() => setError(''), 3000);
@@ -106,18 +111,18 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
           Tap the mic to enable voice
         </div>
       )}
-      {status === 'listening' && !error && (
+      {status === 'listening' && isListening && !error && (
         <div className="bg-card border rounded-lg px-3 py-1.5 shadow-lg text-xs text-muted-foreground animate-pulse">
           Say "Pothole Ping" to drop a pin
         </div>
       )}
-      {status === 'gps' && (
+      {status === 'gps' && isListening && (
         <div className="bg-card border rounded-lg px-3 py-1.5 shadow-lg text-xs flex items-center gap-1.5">
           <Loader2 className="w-3 h-3 animate-spin" />
           Getting GPS...
         </div>
       )}
-      {status === 'triggered' && (
+      {status === 'triggered' && isListening && (
         <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 shadow-lg text-xs text-green-700 font-medium">
           Pin dropped! Tap it to add details.
         </div>
