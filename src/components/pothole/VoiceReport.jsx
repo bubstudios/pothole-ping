@@ -163,8 +163,10 @@ function SpeechListener({ onWakeWord }) {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    let stopped = false;
 
     recognition.onresult = (event) => {
+      if (stopped) return;
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript.toLowerCase();
         for (const phrase of WAKE_PHRASES) {
@@ -177,18 +179,20 @@ function SpeechListener({ onWakeWord }) {
     };
 
     recognition.onerror = () => {
+      if (stopped) return;
       setTimeout(() => {
-        try { recognition.start(); } catch {}
+        if (!stopped) { try { recognition.start(); } catch {} }
       }, 1000);
     };
 
     recognition.onend = () => {
-      try { recognition.start(); } catch {}
+      if (!stopped) { try { recognition.start(); } catch {} }
     };
 
     recognition.start();
 
     return () => {
+      stopped = true;
       try { recognition.stop(); } catch {}
     };
   }, []);
