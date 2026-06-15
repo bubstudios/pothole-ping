@@ -205,6 +205,10 @@ export default function Donate() {
 
   useEffect(() => {
     loadStats();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      setStep('thanks');
+    }
   }, []);
 
   const loadStats = async () => {
@@ -233,18 +237,25 @@ export default function Donate() {
     setIsSubmitting(true);
 
     try {
-      await base44.entities.Donation.create({
+      const successUrl = window.location.origin + '/donate?success=true';
+      const cancelUrl = window.location.origin + '/donate?canceled=true';
+
+      const response = await base44.functions.invoke('createDonationCheckout', {
         amount,
         recurring,
+        successUrl,
+        cancelUrl,
+        donorName: donorName || undefined,
         message: message || undefined,
-        donor_name: donorName || undefined,
-        status: 'completed',
       });
-      setStep('thanks');
-      setDonorCount((prev) => prev + 1);
-    } catch {
-      // Still show thanks even if tracking fails
-      setStep('thanks');
+
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
     }
     setIsSubmitting(false);
   };
