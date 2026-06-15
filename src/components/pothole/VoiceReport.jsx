@@ -7,24 +7,49 @@ const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechReco
 export default function VoiceReport({ onVoiceReport, isListening, onToggleListening }) {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
-  const [needsGesture, setNeedsGesture] = useState(true);
+  const [needsGesture, setNeedsGesture] = useState(false);
   const statusRef = useRef(status);
   const onVoiceReportRef = useRef(onVoiceReport);
   const onToggleListeningRef = useRef(onToggleListening);
+  const gestureGrantedRef = useRef(false);
 
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { onVoiceReportRef.current = onVoiceReport; }, [onVoiceReport]);
   useEffect(() => { onToggleListeningRef.current = onToggleListening; }, [onToggleListening]);
 
-  // On mount, flag that we need a user gesture before speech recognition can start
+  // On mount: check if mic permission is already granted (from a previous session).
+  // If yes → auto-start listening. If no → wait for a tap.
   useEffect(() => {
-    if (isListening && !SpeechRecognitionAPI) {
+    if (!isListening || status !== 'idle') return;
+
+    if (!SpeechRecognitionAPI) {
       setStatus('error');
       setError('Voice not supported. Try Chrome or Edge.');
-    } else if (isListening && status === 'idle') {
-      setNeedsGesture(true);
-      setStatus('waiting');
+      return;
     }
+
+    let cancelled = false;
+    (async () => {
+      let permissionGranted = false;
+      try {
+        const perm = await navigator.permissions.query({ name: 'microphone' });
+        permissionGranted = perm.state === 'granted';
+      } catch {
+        // permissions.query not supported — try to auto-start and see if it works
+        permissionGranted = true; // optimistic
+      }
+      if (cancelled) return;
+      if (permissionGranted) {
+        setNeedsGesture(false);
+        setStatus('listening');
+        gestureGrantedRef.current = true;
+      } else {
+        setNeedsGesture(true);
+        setStatus('waiting');
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [isListening, status]);
 
   const getPosition = () =>
@@ -38,22 +63,24 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
 
   const handleToggle = () => {
     if (needsGesture) {
-      // Tapping to enable — use this user gesture to start speech recognition
       setNeedsGesture(false);
       setStatus('listening');
       setError('');
+      gestureGrantedRef.current = true;
       return;
     }
     if (isListening) {
       onToggleListening(false);
       setStatus('idle');
       setError('');
-      setNeedsGesture(true);
+      setNeedsGesture(false);
+      gestureGrantedRef.current = false;
     } else {
       onToggleListening(true);
       setNeedsGesture(false);
       setStatus('listening');
       setError('');
+      gestureGrantedRef.current = true;
     }
   };
 
