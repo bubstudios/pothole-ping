@@ -8,6 +8,8 @@ import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle,
 import JurisdictionCard from './JurisdictionCard';
 import DamageReportForm from './DamageReportForm';
 import ShareButton from './ShareButton';
+import TrustedPartners from './TrustedPartners';
+import AdvertiseCTA from '@/components/AdvertiseCTA';
 import moment from 'moment';
 
 const severityBadge = {
@@ -39,10 +41,17 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingReport, setIsSendingReport] = useState(false);
   const [sendResult, setSendResult] = useState(null);
+  const [sponsors, setSponsors] = useState([]);
 
   useEffect(() => {
     loadComments();
+    loadSponsors();
   }, [pothole.id]);
+
+  const loadSponsors = async () => {
+    const data = await base44.entities.SponsoredBusiness.filter({ is_active: true }, '-priority', 10);
+    setSponsors(data);
+  };
 
   const loadComments = async () => {
     const data = await base44.entities.PotholeComment.filter(
@@ -159,6 +168,10 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
       )}
 
       <DamageReportForm potholeId={pothole.id} reportCreatedDate={pothole.created_date} />
+
+      {sponsors.length > 0 && <TrustedPartners businesses={sponsors} context="pothole" />}
+
+      {sponsors.length === 0 && <AdvertiseCTA />}
 
       <div className="flex flex-wrap gap-2">
         <ShareButton pothole={pothole} />

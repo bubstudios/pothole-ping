@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import SupportButton from '@/components/SupportButton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -482,6 +483,7 @@ export default function Home() {
             <MessageCircle className="w-3.5 h-3.5" />
             Neighborhoods
           </Link>
+          <SupportButton compact />
           <div className="hidden sm:flex border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('map')}

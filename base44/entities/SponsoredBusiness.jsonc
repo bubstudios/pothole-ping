@@ -1,0 +1,65 @@
+{
+  "name": "SponsoredBusiness",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Business name"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "tire_shop",
+        "alignment",
+        "auto_repair",
+        "towing",
+        "auto_body",
+        "insurance",
+        "other"
+      ],
+      "description": "Type of auto service"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Business phone number"
+    },
+    "email": {
+      "type": "string",
+      "description": "Contact email"
+    },
+    "website": {
+      "type": "string",
+      "description": "Business website URL"
+    },
+    "address": {
+      "type": "string",
+      "description": "Physical address"
+    },
+    "zip_codes": {
+      "type": "string",
+      "description": "Comma-separated ZIP codes this business serves"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of services"
+    },
+    "discount_text": {
+      "type": "string",
+      "description": "Special offer, e.g. '15% off tire check with code PING15'"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "priority": {
+      "type": "number",
+      "default": 0,
+      "description": "Higher = shown first"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "phone"
+  ]
+}
