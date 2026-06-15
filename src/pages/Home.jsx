@@ -65,6 +65,7 @@ export default function Home() {
   const [isVoiceListening, setIsVoiceListening] = useState(true);
   const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
   const [userPosition, setUserPosition] = useState(null);
+  const [dangerNearby, setDangerNearby] = useState(null);
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [heatmapSeverity, setHeatmapSeverity] = useState('all');
   const [heatmapTimeRange, setHeatmapTimeRange] = useState('all');
@@ -353,6 +354,7 @@ export default function Home() {
             isActive={proximityAlertsOn}
             onToggle={() => setProximityAlertsOn(!proximityAlertsOn)}
             onLocationChange={setUserPosition}
+            onDangerNearby={setDangerNearby}
           />
           <Link
             to="/leaderboard"
@@ -477,6 +479,20 @@ export default function Home() {
                 timeRange={heatmapTimeRange}
               />
             </PotholeMap>
+            {dangerNearby && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none">
+                <div className="bg-red-600/90 text-white rounded-2xl px-5 py-3 shadow-2xl animate-pulse flex items-center gap-3 backdrop-blur">
+                  <span className="text-3xl">⚠️</span>
+                  <div>
+                    <p className="font-heading font-bold text-sm leading-tight">Pothole Ahead!</p>
+                    <p className="text-xs opacity-90">
+                      {dangerNearby.pothole?.severity || 'Unknown'} · {Math.round(dangerNearby.distance)}m
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {!sidebarOpen && <HeatmapControls
               enabled={heatmapEnabled}
               onToggle={() => setHeatmapEnabled(!heatmapEnabled)}

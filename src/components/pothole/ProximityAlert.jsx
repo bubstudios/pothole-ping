@@ -14,7 +14,7 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function ProximityAlert({ potholes = [], isActive, onToggle, onLocationChange }) {
+export default function ProximityAlert({ potholes = [], isActive, onToggle, onLocationChange, onDangerNearby }) {
   const [userLocation, setUserLocation] = useState(null);
   const [nearestDistance, setNearestDistance] = useState(null);
   const [geoError, setGeoError] = useState(null);
@@ -85,6 +85,9 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
     }
 
     setNearestDistance(minDist);
+
+    // Danger zone: within 100m of any pothole
+    onDangerNearby?.(minDist < 100 ? { pothole: nearest, distance: minDist } : null);
 
     // Alert if within 100 meters and not already alerted for this pothole
     if (nearest && minDist < 100 && !alertedIds.current.has(nearest.id)) {
