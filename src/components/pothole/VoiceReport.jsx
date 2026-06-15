@@ -18,6 +18,36 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
   // Clear error on unmount
   useEffect(() => { return () => { setError(''); }; }, []);
 
+  // Auto-start mic init when isListening becomes true without user toggle (e.g. app mount)
+  const initMic = useCallback(async () => {
+    if (!SpeechRecognitionAPI) {
+      setStatus('error');
+      setError('Voice not supported in this browser. Try Chrome or Edge.');
+      return false;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setError('');
+      setStatus('listening');
+      return true;
+    } catch (e) {
+      setStatus('error');
+      if (e.name === 'NotAllowedError') {
+        setError('Microphone access denied. Allow mic in your browser settings.');
+      } else {
+        setError('No microphone found. Check your device.');
+      }
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isListening && status === 'idle') {
+      initMic();
+    }
+  }, [isListening, status, initMic]);
+
   const getPosition = () =>
     new Promise((resolve, reject) => {
       if (!navigator.geolocation) return reject(new Error('No GPS'));
@@ -35,30 +65,9 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       return;
     }
 
-    // Check browser support
-    if (!SpeechRecognitionAPI) {
-      setStatus('error');
-      setError('Voice not supported in this browser. Try Chrome or Edge.');
-      return;
-    }
-
-    // Request mic permission
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Stop the test stream — SpeechRecognition uses its own mic access
-      stream.getTracks().forEach((t) => t.stop());
-    } catch (e) {
-      setStatus('error');
-      if (e.name === 'NotAllowedError') {
-        setError('Microphone access denied. Allow mic in your browser settings.');
-      } else {
-        setError('No microphone found. Check your device.');
-      }
-      return;
-    }
-
-    setError('');
-    setStatus('listening');
+    // Request mic permission + start listening
+    const ok = await initMic();
+    if (!ok) return;
     onToggleListening(true);
   };
 
