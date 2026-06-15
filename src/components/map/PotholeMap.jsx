@@ -74,7 +74,7 @@ function MapClickHandler({ onMapClick, isDropping }) {
 function FlyToLocation({ center }) {
   const map = useMap();
   useEffect(() => {
-    if (center) {
+    if (center && !isNaN(center[0]) && !isNaN(center[1])) {
       map.flyTo(center, 15, { duration: 1 });
     }
   }, [center, map]);
@@ -120,10 +120,10 @@ export default function PotholeMap({
         <MapClickHandler onMapClick={onMapClick} isDropping={isDropping} />
         {flyToCenter && <FlyToLocation center={flyToCenter} />}
 
-        {potholes.map((p) => (
+        {potholes.filter(p => !isNaN(p.latitude) && !isNaN(p.longitude)).map((p) => (
           <Marker
             key={p.id}
-            position={[p.latitude, p.longitude]}
+            position={[Number(p.latitude), Number(p.longitude)]}
             icon={createPotholeIcon(p.severity)}
             eventHandlers={{ click: () => onPotholeClick?.(p) }}
           >
