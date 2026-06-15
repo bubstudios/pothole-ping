@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Heart, Coffee, Gift, ArrowLeft, ArrowRight, Check, Share2, Users, Wrench, Shield, Server, MessageCircle, Loader2, Repeat, ExternalLink } from 'lucide-react';
+import { Heart, Coffee, Gift, ArrowLeft, ArrowRight, Check, Share2, Users, Wrench, Shield, Server, MessageCircle, Loader2, Repeat, ArrowUpRight } from 'lucide-react';
 
 const PRESET_TIERS = [
   { amount: 3, label: 'Coffee', icon: Coffee, description: 'Fuel the team' },
@@ -203,6 +203,7 @@ export default function Donate() {
   const [potholesFixed, setPotholesFixed] = useState(0);
   const [donorCount, setDonorCount] = useState(0);
   const [iframeBlocked, setIframeBlocked] = useState(false);
+  const [isBooted, setIsBooted] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -210,6 +211,7 @@ export default function Donate() {
     if (params.get('success') === 'true') {
       setStep('thanks');
     }
+    setIsBooted(true);
   }, []);
 
   const loadStats = async () => {
@@ -277,6 +279,14 @@ export default function Donate() {
     }
   };
 
+  if (!isBooted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -289,7 +299,7 @@ export default function Donate() {
           {iframeBlocked && (
             <div className="space-y-4 text-center">
               <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
-                <ExternalLink className="w-7 h-7 text-amber-600" />
+                <ArrowUpRight className="w-7 h-7 text-amber-600" />
               </div>
               <div>
                 <h3 className="font-heading font-bold text-lg">Open in your browser</h3>
@@ -297,13 +307,15 @@ export default function Donate() {
                   Secure checkout works only in a full browser tab — not inside this preview.
                 </p>
               </div>
-              <Button
-                onClick={() => window.open(window.location.href, '_blank')}
-                className="gap-2 w-full"
+              <a
+                href={window.location.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-10 px-4 py-2 bg-primary text-primary-foreground shadow hover:bg-primary/90 w-full"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ArrowUpRight className="w-4 h-4" />
                 Open Published App
-              </Button>
+              </a>
               <button
                 onClick={() => setIframeBlocked(false)}
                 className="text-xs text-muted-foreground hover:text-foreground"
