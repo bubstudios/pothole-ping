@@ -123,7 +123,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
             : 'bg-primary text-primary-foreground hover:scale-105'
         }`}
       >
-        {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+        {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
       </button>
       {isListening && <SpeechListener onWakeWord={handleWakeWord} />}
     </div>
