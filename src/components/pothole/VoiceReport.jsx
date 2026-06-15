@@ -7,6 +7,7 @@ const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechReco
 export default function VoiceReport({ onVoiceReport, isListening, onToggleListening }) {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
+  const [needsGesture, setNeedsGesture] = useState(true);
   const statusRef = useRef(status);
   const onVoiceReportRef = useRef(onVoiceReport);
   const onToggleListeningRef = useRef(onToggleListening);
@@ -15,13 +16,14 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
   useEffect(() => { onVoiceReportRef.current = onVoiceReport; }, [onVoiceReport]);
   useEffect(() => { onToggleListeningRef.current = onToggleListening; }, [onToggleListening]);
 
-  // On mount, go straight to listening if isListening is true
+  // On mount, flag that we need a user gesture before speech recognition can start
   useEffect(() => {
     if (isListening && !SpeechRecognitionAPI) {
       setStatus('error');
       setError('Voice not supported. Try Chrome or Edge.');
     } else if (isListening && status === 'idle') {
-      setStatus('listening');
+      setNeedsGesture(true);
+      setStatus('waiting');
     }
   }, [isListening, status]);
 
@@ -35,12 +37,21 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
     });
 
   const handleToggle = () => {
+    if (needsGesture) {
+      // Tapping to enable — use this user gesture to start speech recognition
+      setNeedsGesture(false);
+      setStatus('listening');
+      setError('');
+      return;
+    }
     if (isListening) {
       onToggleListening(false);
       setStatus('idle');
       setError('');
+      setNeedsGesture(true);
     } else {
       onToggleListening(true);
+      setNeedsGesture(false);
       setStatus('listening');
       setError('');
     }
@@ -63,6 +74,11 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
 
   return (
     <div className="fixed bottom-24 sm:bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
+      {status === 'waiting' && !error && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 shadow-lg text-xs text-amber-700 font-medium">
+          Tap the mic to enable voice
+        </div>
+      )}
       {status === 'listening' && !error && (
         <div className="bg-card border rounded-lg px-3 py-1.5 shadow-lg text-xs text-muted-foreground animate-pulse">
           Say "Pothole Ping" to drop a pin
@@ -88,8 +104,10 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       <button
         onClick={handleToggle}
         className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-          isListening
+          isListening && !needsGesture
             ? 'bg-red-500 text-white animate-pulse'
+            : isListening && needsGesture
+            ? 'bg-amber-500 text-white'
             : status === 'error'
             ? 'bg-destructive text-destructive-foreground'
             : 'bg-primary text-primary-foreground hover:scale-105'
@@ -97,14 +115,13 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       >
         {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
       </button>
-      {isListening && <SpeechListener onWakeWord={handleWakeWord} />}
+      {isListening && !needsGesture && <SpeechListener onWakeWord={handleWakeWord} />}
     </div>
   );
 }
 
 function SpeechListener({ onWakeWord }) {
   const onWakeWordRef = useRef(onWakeWord);
-  const recogRef = useRef(null);
   useEffect(() => { onWakeWordRef.current = onWakeWord; });
 
   useEffect(() => {
@@ -114,7 +131,6 @@ function SpeechListener({ onWakeWord }) {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
-    recogRef.current = recognition;
 
     recognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -129,7 +145,6 @@ function SpeechListener({ onWakeWord }) {
     };
 
     recognition.onerror = () => {
-      // Browser may block auto-start without user gesture; retry on next interaction
       setTimeout(() => {
         try { recognition.start(); } catch {}
       }, 1000);
@@ -139,11 +154,7 @@ function SpeechListener({ onWakeWord }) {
       try { recognition.start(); } catch {}
     };
 
-    try {
-      recognition.start();
-    } catch {
-      // Silently fail — browser requires user gesture, retry on toggle
-    }
+    recognition.start();
 
     return () => {
       try { recognition.stop(); } catch {}
