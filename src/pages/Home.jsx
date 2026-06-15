@@ -62,7 +62,7 @@ export default function Home() {
   const [flyToCenter, setFlyToCenter] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFixed, setShowFixed] = useState(false);
-  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [isVoiceListening, setIsVoiceListening] = useState(true);
   const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
   const [userPosition, setUserPosition] = useState(null);
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
