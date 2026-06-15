@@ -7,6 +7,7 @@ const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechReco
 export default function VoiceReport({ onVoiceReport, isListening, onToggleListening }) {
   const [status, setStatus] = useState('idle'); // idle | listening | gps | triggered | error
   const [error, setError] = useState('');
+  const [micReady, setMicReady] = useState(false);
   const statusRef = useRef(status);
   const onVoiceReportRef = useRef(onVoiceReport);
   const onToggleListeningRef = useRef(onToggleListening);
@@ -15,10 +16,8 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
   useEffect(() => { onVoiceReportRef.current = onVoiceReport; }, [onVoiceReport]);
   useEffect(() => { onToggleListeningRef.current = onToggleListening; }, [onToggleListening]);
 
-  // Clear error on unmount
   useEffect(() => { return () => { setError(''); }; }, []);
 
-  // Auto-start mic init when isListening becomes true without user toggle (e.g. app mount)
   const initMic = useCallback(async () => {
     if (!SpeechRecognitionAPI) {
       setStatus('error');
@@ -30,6 +29,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       stream.getTracks().forEach((t) => t.stop());
       setError('');
       setStatus('listening');
+      setMicReady(true);
       return true;
     } catch (e) {
       setStatus('error');
@@ -42,11 +42,12 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
     }
   }, []);
 
+  // Auto-start on mount if isListening defaults to true
   useEffect(() => {
-    if (isListening && status === 'idle') {
+    if (isListening && !micReady && status === 'idle') {
       initMic();
     }
-  }, [isListening, status, initMic]);
+  }, [isListening, micReady, status, initMic]);
 
   const getPosition = () =>
     new Promise((resolve, reject) => {
@@ -59,13 +60,13 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
 
   const handleToggle = async () => {
     if (isListening) {
+      setMicReady(false);
       onToggleListening(false);
       setStatus('idle');
       setError('');
       return;
     }
 
-    // Request mic permission + start listening
     const ok = await initMic();
     if (!ok) return;
     onToggleListening(true);
@@ -125,7 +126,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
       >
         {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
       </button>
-      {isListening && <SpeechListener onWakeWord={handleWakeWord} />}
+      {micReady && <SpeechListener onWakeWord={handleWakeWord} />}
     </div>
   );
 }
