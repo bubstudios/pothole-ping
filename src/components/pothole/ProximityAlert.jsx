@@ -14,7 +14,7 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function ProximityAlert({ potholes = [], isActive, onToggle, onLocationChange, onDangerNearby }) {
+export default function ProximityAlert({ potholes = [], isActive, onToggle, onLocationChange, onDangerNearby, onAvoidance }) {
   const [userLocation, setUserLocation] = useState(null);
   const [nearestDistance, setNearestDistance] = useState(null);
   const [geoError, setGeoError] = useState(null);
@@ -97,6 +97,7 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
         description: `A ${nearest.severity} pothole is ${meters}m ahead at ${nearest.address || 'unknown location'}. Drive carefully!`,
         duration: 8000,
       });
+      onAvoidance?.(nearest, minDist);
     }
 
     // Clean up IDs for potholes no longer in list

@@ -21,6 +21,7 @@ import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
 import DuplicateWarning from '@/components/pothole/DuplicateWarning';
 import FeedbackModal from '@/components/FeedbackModal';
+import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
 
 // Verified jurisdiction contact overrides — applied after LLM lookup
 const JURISDICTION_OVERRIDES = [
@@ -98,10 +99,13 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRep, setUserRep] = useState(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [totalSavings, setTotalSavings] = useState(0);
+  const [avoidanceCount, setAvoidanceCount] = useState(0);
 
   useEffect(() => {
     loadPotholes();
     loadCurrentUser();
+    loadAvoidances();
   }, []);
 
   const loadCurrentUser = async () => {
@@ -129,6 +133,29 @@ export default function Home() {
   const loadPotholes = async () => {
     const data = await base44.entities.PotholeReport.list('-created_date', 200);
     setPotholes(data);
+  };
+
+  const loadAvoidances = async () => {
+    try {
+      const data = await base44.entities.PotholeAvoidance.list('-created_date', 500);
+      const total = data.reduce((sum, a) => sum + (Number(a.estimated_savings) || 0), 0);
+      setTotalSavings(total);
+      setAvoidanceCount(data.length);
+    } catch (e) {}
+  };
+
+  const handleAvoidance = async (pothole, distanceMeters) => {
+    const savings = SEVERITY_COSTS[pothole.severity] || 150;
+    try {
+      await base44.entities.PotholeAvoidance.create({
+        pothole_id: pothole.id,
+        distance_meters: Math.round(distanceMeters),
+        estimated_savings: savings,
+        severity: pothole.severity,
+      });
+      setTotalSavings((prev) => prev + savings);
+      setAvoidanceCount((prev) => prev + 1);
+    } catch (e) {}
   };
 
   // Haversine distance in feet
@@ -381,7 +408,9 @@ export default function Home() {
             onToggle={() => setProximityAlertsOn(!proximityAlertsOn)}
             onLocationChange={setUserPosition}
             onDangerNearby={setDangerNearby}
+            onAvoidance={handleAvoidance}
           />
+          <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />
           <Link
             to="/leaderboard"
             className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-muted-foreground border-border hover:bg-muted transition-colors"

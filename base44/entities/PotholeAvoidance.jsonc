@@ -1,0 +1,31 @@
+{
+  "name": "PotholeAvoidance",
+  "type": "object",
+  "properties": {
+    "pothole_id": {
+      "type": "string",
+      "description": "ID of the pothole that was avoided"
+    },
+    "distance_meters": {
+      "type": "number",
+      "description": "Closest distance in meters before avoiding"
+    },
+    "estimated_savings": {
+      "type": "number",
+      "description": "Estimated repair cost avoided for this incident"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "minor",
+        "moderate",
+        "severe",
+        "dangerous"
+      ]
+    }
+  },
+  "required": [
+    "pothole_id",
+    "estimated_savings"
+  ]
+}
