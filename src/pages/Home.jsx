@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,7 @@ import PotholeListItem from '@/components/pothole/PotholeListItem';
 import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
 import DuplicateWarning from '@/components/pothole/DuplicateWarning';
+import FeedbackModal from '@/components/FeedbackModal';
 
 // Verified jurisdiction contact overrides — applied after LLM lookup
 const JURISDICTION_OVERRIDES = [
@@ -96,6 +97,7 @@ export default function Home() {
   const [duplicateCandidate, setDuplicateCandidate] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRep, setUserRep] = useState(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     loadPotholes();
@@ -479,6 +481,13 @@ export default function Home() {
             <span className="hidden sm:inline">Report Pothole</span>
             <span className="sm:hidden">Report</span>
           </Button>
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+            title="Report a bug or suggest a feature"
+          >
+            <Bug className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
@@ -652,6 +661,8 @@ export default function Home() {
           onToggleListening={setIsVoiceListening}
         />
       )}
+
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
 
       <div className="sm:hidden flex border-t bg-card">
         <button
