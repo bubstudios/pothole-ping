@@ -9,8 +9,6 @@ const SEVERITY_COSTS = {
 };
 
 export default function SavingsWidget({ totalSavings, avoidanceCount }) {
-  if (!avoidanceCount || avoidanceCount === 0) return null;
-
   return (
     <div className="absolute bottom-4 left-4 z-[999] group" title="Estimated repair costs avoided by steering clear of potholes">
       <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-green-600 text-white shadow-lg border border-green-500 pointer-events-auto">
