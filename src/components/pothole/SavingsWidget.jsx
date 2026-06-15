@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, TrendingUp } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 const SEVERITY_COSTS = {
   minor: 50,
@@ -12,13 +12,16 @@ export default function SavingsWidget({ totalSavings, avoidanceCount }) {
   if (!avoidanceCount || avoidanceCount === 0) return null;
 
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-green-50 border-green-300 text-green-700 transition-colors">
-      <Shield className="w-3.5 h-3.5" />
-      <span className="hidden sm:inline">Damage Avoided:</span>
-      <span className="font-mono font-bold">${totalSavings.toLocaleString()}</span>
-      <span className="hidden sm:inline text-green-500">
-        · {avoidanceCount} pothole{avoidanceCount !== 1 ? 's' : ''}
-      </span>
+    <div className="absolute bottom-4 left-4 z-[999] group" title="Estimated repair costs avoided by steering clear of potholes">
+      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-green-600 text-white shadow-lg border border-green-500 pointer-events-auto">
+        <Shield className="w-3.5 h-3.5" />
+        <span className="font-mono font-bold">${totalSavings.toLocaleString()}</span>
+        <span className="opacity-75">saved</span>
+      </div>
+      {/* Tooltip on hover */}
+      <div className="absolute bottom-full left-0 mb-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[11px] leading-tight shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[1001]">
+        Estimated repair costs avoided by<br />dodging {avoidanceCount} pothole{avoidanceCount !== 1 ? 's' : ''}
+      </div>
     </div>
   );
 }

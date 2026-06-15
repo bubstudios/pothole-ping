@@ -92,9 +92,9 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
     // Alert if within 100 meters and not already alerted for this pothole
     if (nearest && minDist < 100 && !alertedIds.current.has(nearest.id)) {
       alertedIds.current.add(nearest.id);
-      const meters = Math.round(minDist);
+      const feet = Math.round(minDist * 3.28084);
       toast.warning('Pothole Nearby!', {
-        description: `A ${nearest.severity} pothole is ${meters}m ahead at ${nearest.address || 'unknown location'}. Drive carefully!`,
+        description: `A ${nearest.severity} pothole is ${feet}ft ahead at ${nearest.address || 'unknown location'}. Drive carefully!`,
         duration: 8000,
       });
       onAvoidance?.(nearest, minDist);
@@ -107,10 +107,12 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
     }
   }, [userLocation, potholes]);
 
+  // US units: convert meters to feet/miles
   const formatDistance = (meters) => {
     if (meters == null) return null;
-    if (meters < 1000) return `${Math.round(meters)}m`;
-    return `${(meters / 1000).toFixed(1)}km`;
+    const feet = meters * 3.28084;
+    if (feet < 528) return `${Math.round(feet)}ft`;
+    return `${(feet / 5280).toFixed(1)}mi`;
   };
 
   return (
@@ -129,12 +131,9 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
         ) : (
           <BellOff className="w-3.5 h-3.5" />
         )}
-        <span className="hidden sm:inline">
-          {isActive ? 'Alerts On' : 'Alerts'}
-        </span>
         {isActive && nearestDistance != null && (
-          <span className="text-blue-500 font-mono">
-            · {formatDistance(nearestDistance)}
+          <span className="font-mono text-blue-600">
+            {formatDistance(nearestDistance)}
           </span>
         )}
       </button>

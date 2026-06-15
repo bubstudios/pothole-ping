@@ -13,47 +13,69 @@ function haversineMeters(lat1, lng1, lat2, lng2) {
 }
 
 const STOP_THRESHOLD_METERS = 20;
-const STOP_DURATION_MS = 5 * 60 * 1000; // 5 minutes — skip stoplights
-const MIN_TRAVEL_METERS = 200; // must be this far from pin before stop counts
+const STOP_DURATION_MS = 5 * 60 * 1000;
+const MIN_TRAVEL_METERS = 200;
 
-export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
+function pinKey(pin) {
+  return `${pin.lat}-${pin.lng}`;
+}
+
+export default function DelayedReportPrompt({ pendingPins, onPrompt }) {
   const [isWatching, setIsWatching] = useState(false);
-  const stationarySince = useRef(null);
+  const stationarySince = useRef({});        // key → timestamp
   const lastPosition = useRef(null);
   const watchId = useRef(null);
-  const triggered = useRef(false);
-  const furthestFromPin = useRef(0);
+  const furthestFromPin = useRef({});         // key → max meters traveled
+  const triggeredPins = useRef(new Set());    // keys already triggered
 
-  // Start watching when a pending pin appears
+  // Start/stop GPS watch based on whether we have pending pins
   useEffect(() => {
-    if (!pendingPin) {
-      // Cleanup if pin was cleared
+    if (!pendingPins || pendingPins.length === 0) {
       stopWatching();
-      triggered.current = false;
+      triggeredPins.current.clear();
       return;
     }
 
-    if (triggered.current) return;
+    // Any untriggered pins?
+    const allKeys = pendingPins.map(pinKey);
+    const hasUntriggered = allKeys.some((k) => !triggeredPins.current.has(k));
+    if (!hasUntriggered) return;
+
     startWatching();
-  }, [pendingPin?.lat, pendingPin?.lng]);
+  }, [pendingPins]);
+
+  // Clean up removed pins from tracking
+  useEffect(() => {
+    const currentKeys = new Set((pendingPins || []).map(pinKey));
+    // Remove triggered entries for pins no longer in the list
+    for (const k of triggeredPins.current) {
+      if (!currentKeys.has(k)) triggeredPins.current.delete(k);
+    }
+    for (const k of Object.keys(furthestFromPin.current)) {
+      if (!currentKeys.has(k)) delete furthestFromPin.current[k];
+    }
+    for (const k of Object.keys(stationarySince.current)) {
+      if (!currentKeys.has(k)) delete stationarySince.current[k];
+    }
+  }, [pendingPins]);
 
   const startWatching = () => {
     if (!navigator.geolocation) return;
     setIsWatching(true);
-    stationarySince.current = null;
-    lastPosition.current = null;
-    triggered.current = false;
-    furthestFromPin.current = 0;
 
     const id = navigator.geolocation.watchPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
-        // Track how far we've traveled from the pin
-        if (pendingPin) {
-          const distFromPin = haversineMeters(pendingPin.lat, pendingPin.lng, loc.lat, loc.lng);
-          if (distFromPin > furthestFromPin.current) {
-            furthestFromPin.current = distFromPin;
+        // Update furthest distance from each untriggered pin
+        if (pendingPins) {
+          for (const pin of pendingPins) {
+            const k = pinKey(pin);
+            if (triggeredPins.current.has(k)) continue;
+            const dist = haversineMeters(pin.lat, pin.lng, loc.lat, loc.lng);
+            if (dist > (furthestFromPin.current[k] || 0)) {
+              furthestFromPin.current[k] = dist;
+            }
           }
         }
 
@@ -64,36 +86,50 @@ export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
           );
 
           if (moved < STOP_THRESHOLD_METERS) {
-            // Staying still — only count if we've actually traveled away from the pin first
-            if (furthestFromPin.current < MIN_TRAVEL_METERS) {
-              // Still near the pothole — likely a stoplight, ignore
-              stationarySince.current = null;
-            } else if (!stationarySince.current) {
-              stationarySince.current = Date.now();
-            } else if (Date.now() - stationarySince.current >= STOP_DURATION_MS) {
-              // Stopped for 2+ minutes after traveling away from pin — trigger prompt
-              triggered.current = true;
-              stopWatching();
-              const minutesAgo = Math.round((Date.now() - (pendingPin?.time || Date.now())) / 60000);
-              toast('Forgot something?', {
-                description: `You flagged a pothole ${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''} ago. Tap to add details before you forget.`,
-                action: {
-                  label: 'Add Details',
-                  onClick: () => onPrompt?.(pendingPin),
-                },
-                duration: 15000,
-              });
+            // Stationary — check each untriggered pin
+            if (pendingPins) {
+              for (const pin of pendingPins) {
+                const k = pinKey(pin);
+                if (triggeredPins.current.has(k)) continue;
+
+                if ((furthestFromPin.current[k] || 0) < MIN_TRAVEL_METERS) {
+                  // Still near the pothole — reset this pin's stationary timer
+                  stationarySince.current[k] = null;
+                } else if (!stationarySince.current[k]) {
+                  stationarySince.current[k] = Date.now();
+                } else if (Date.now() - stationarySince.current[k] >= STOP_DURATION_MS) {
+                  triggeredPins.current.add(k);
+                  const minutesAgo = Math.round((Date.now() - (pin.time || Date.now())) / 60000);
+                  toast('Forgot something?', {
+                    description: `You flagged a pothole ${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''} ago. Tap to add details before you forget.`,
+                    action: {
+                      label: 'Add Details',
+                      onClick: () => onPrompt?.(pin),
+                    },
+                    duration: 15000,
+                  });
+                }
+              }
             }
           } else {
-            // Moved significantly — reset the clock
-            stationarySince.current = null;
+            // Moving — reset stationary timers
+            if (pendingPins) {
+              for (const pin of pendingPins) {
+                stationarySince.current[pinKey(pin)] = null;
+              }
+            }
           }
         }
 
         lastPosition.current = loc;
+
+        // If all pins triggered, stop watching
+        const allKeys = pendingPins ? pendingPins.map(pinKey) : [];
+        if (allKeys.every((k) => triggeredPins.current.has(k))) {
+          stopWatching();
+        }
       },
       () => {
-        // GPS error — silently stop
         stopWatching();
       },
       { enableHighAccuracy: true, maximumAge: 30000, timeout: 30000 }
@@ -108,15 +144,13 @@ export default function DelayedReportPrompt({ pendingPin, onPrompt }) {
       watchId.current = null;
     }
     setIsWatching(false);
-    stationarySince.current = null;
+    stationarySince.current = {};
     lastPosition.current = null;
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => stopWatching();
   }, []);
 
-  // This component renders nothing — it just monitors and fires callbacks
   return null;
 }

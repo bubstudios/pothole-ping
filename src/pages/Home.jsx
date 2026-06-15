@@ -107,7 +107,7 @@ export default function Home() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
-  const [pendingVoicePin, setPendingVoicePin] = useState(null);
+  const [pendingVoicePins, setPendingVoicePins] = useState([]);
 
   useEffect(() => {
     loadPotholes();
@@ -218,10 +218,8 @@ export default function Home() {
   }, [isDropping, openReportAt]);
 
   const handleVoiceReport = useCallback((lat, lng) => {
-    setIsVoiceListening(false);
     setIsDropping(false);
-    setNewPin({ lat, lng });
-    setPendingVoicePin({ lat, lng, time: Date.now() });
+    setPendingVoicePins((prev) => [...prev, { lat, lng, time: Date.now() }]);
     setSelectedPothole(null);
     setDuplicateCandidate(null);
     setSidebarOpen(false);
@@ -232,7 +230,8 @@ export default function Home() {
 
   const handleNewPinClick = useCallback(() => {
     if (!newPin) return;
-    setPendingVoicePin(null);
+    // Remove the first pending voice pin if one exists for this location
+    setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin.lat || p.lng !== newPin.lng));
     openReportAt(newPin.lat, newPin.lng);
   }, [newPin, openReportAt]);
 
@@ -255,7 +254,7 @@ export default function Home() {
     };
     const created = await base44.entities.PotholeReport.create(report);
     setNewPin(null);
-    setPendingVoicePin(null);
+    setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin.lat || p.lng !== newPin.lng));
     setJurisdictionInfo(null);
     setSidebarOpen(false);
     loadPotholes();
@@ -271,7 +270,7 @@ export default function Home() {
 
   const handleCancelReport = () => {
     setNewPin(null);
-    setPendingVoicePin(null);
+    setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin?.lat || p.lng !== newPin?.lng));
     setJurisdictionInfo(null);
     setIsLoadingJurisdiction(false);
     setDuplicateCandidate(null);
@@ -355,7 +354,7 @@ export default function Home() {
   const handleDelayedPrompt = useCallback((pin) => {
     if (!pin) return;
     setFlyToCenter([pin.lat, pin.lng]);
-    // Open the report form for this pin
+    setPendingVoicePins((prev) => prev.filter((p) => p.lat !== pin.lat || p.lng !== pin.lng));
     openReportAt(pin.lat, pin.lng);
   }, [openReportAt]);
 
@@ -428,7 +427,6 @@ export default function Home() {
             onDangerNearby={setDangerNearby}
             onAvoidance={handleAvoidance}
           />
-          <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />
           <Link
             to="/leaderboard"
             className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-muted-foreground border-border hover:bg-muted transition-colors"
@@ -566,13 +564,14 @@ export default function Home() {
                   <div>
                     <p className="font-heading font-bold text-sm leading-tight">Pothole Ahead!</p>
                     <p className="text-xs opacity-90">
-                      {dangerNearby.pothole?.severity || 'Unknown'} · {Math.round(dangerNearby.distance)}m
+                      {dangerNearby.pothole?.severity || 'Unknown'} · {Math.round(dangerNearby.distance * 3.28084)}ft
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
+            <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />
             {!sidebarOpen && <HeatmapControls
               enabled={heatmapEnabled}
               onToggle={() => setHeatmapEnabled(!heatmapEnabled)}
@@ -710,7 +709,7 @@ export default function Home() {
       )}
 
       <DelayedReportPrompt
-        pendingPin={pendingVoicePin}
+        pendingPins={pendingVoicePins}
         onPrompt={handleDelayedPrompt}
       />
 
