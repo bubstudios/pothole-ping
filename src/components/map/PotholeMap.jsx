@@ -108,14 +108,22 @@ function FollowUserPosition({ position }) {
 const voicePinIcon = L.divIcon({
   className: 'voice-pin-marker',
   html: `<div style="
-    width: 36px; height: 36px; border-radius: 50%;
-    background: #8b5cf6; border: 3px solid white;
-    box-shadow: 0 0 0 4px rgba(139,92,246,0.3), 0 4px 12px rgba(0,0,0,0.3);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #7c3aed; border: 3px solid white;
+    box-shadow: 0 0 0 4px rgba(124,58,237,0.35), 0 0 16px rgba(139,92,246,0.5), 0 4px 12px rgba(0,0,0,0.3);
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; animation: pulse 1.5s infinite;
-  ">🎤</div>`,
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
+    position: relative; animation: voicePulse 1.2s infinite;
+  ">
+    <svg width='22' height='22' viewBox='0 0 24 24' fill='none' style='position:relative;z-index:2;'>
+      <path d='M13 2L5.5 14H11L10 22L18 9H12L13 2Z' fill='#fbbf24' stroke='#f59e0b' stroke-width='1.5' stroke-linejoin='round'/>
+    </svg>
+    <div style='position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:32px;height:8px;background:radial-gradient(ellipse,rgba(200,180,220,0.6),transparent);border-radius:50%;animation:smokeRise 2s infinite;'></div>
+    <div style='position:absolute;top:-2px;left:60%;width:4px;height:4px;background:#b8a0d0;border-radius:50%;animation:debrisFly 1.5s infinite;'></div>
+    <div style='position:absolute;top:2px;left:25%;width:3px;height:3px;background:#c4b0d8;border-radius:50%;animation:debrisFly 1.8s infinite 0.3s;'></div>
+    <div style='position:absolute;top:-1px;left:55%;width:3px;height:3px;background:#d0bce4;border-radius:50%;animation:debrisFly 1.4s infinite 0.7s;'></div>
+  </div>`,
+  iconSize: [44, 44],
+  iconAnchor: [22, 22],
 });
 
 const userLocationIcon = L.divIcon({
@@ -217,6 +225,18 @@ export default function PotholeMap({
         @keyframes pulse {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.15); }
+        }
+        @keyframes voicePulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 4px rgba(124,58,237,0.35), 0 0 16px rgba(139,92,246,0.5); }
+          50% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(124,58,237,0.15), 0 0 24px rgba(139,92,246,0.7); }
+        }
+        @keyframes smokeRise {
+          0% { opacity: 0.6; transform: translateX(-50%) translateY(0) scaleX(1); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-12px) scaleX(1.8); }
+        }
+        @keyframes debrisFly {
+          0% { opacity: 0.8; transform: translate(0, 0); }
+          100% { opacity: 0; transform: translate(6px, -14px); }
         }
       `}</style>
     </div>
