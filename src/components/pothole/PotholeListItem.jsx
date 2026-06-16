@@ -1,6 +1,7 @@
 import React from 'react';
 import { MapPin, ThumbsUp, Clock, AlertTriangle, Zap } from 'lucide-react';
 import moment from 'moment';
+import ShareButton from './ShareButton';
 
 const severityDots = {
   minor: 'bg-yellow-400',
@@ -57,6 +58,9 @@ export default function PotholeListItem({ pothole, onClick }) {
             <span className="flex items-center gap-0.5 text-muted-foreground">
               <Clock className="w-3 h-3" />
               {moment(pothole.created_date).fromNow()}
+            </span>
+            <span onClick={(e) => e.stopPropagation()}>
+              <ShareButton pothole={pothole} />
             </span>
           </div>
         </div>

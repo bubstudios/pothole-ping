@@ -6,7 +6,7 @@ export default function ShareButton({ pothole }) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const text = `🚨 ${pothole.severity.toUpperCase()} pothole reported on PotholePing!\n📍 ${pothole.address || 'Unknown location'}\n🏛️ Managed by: ${pothole.jurisdiction_name || 'Unknown'}\n\nHelp map and fix potholes in your community!`;
+    const text = `🚨 ${pothole.severity.toUpperCase()} pothole on PotholePing!\n📍 ${pothole.address || 'Unknown location'}\n🏛️ ${pothole.jurisdiction_name || 'Unknown jurisdiction'}\n\nJoin the community mapping potholes: potholeping.com`;
 
     if (navigator.share) {
       try {
