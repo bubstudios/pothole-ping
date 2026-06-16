@@ -20,26 +20,8 @@
     "text"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": {
-          "$in": [
-            "user",
-            "admin"
-          ]
-        }
-      }
-    },
-    "read": {
-      "user_condition": {
-        "role": {
-          "$in": [
-            "user",
-            "admin"
-          ]
-        }
-      }
-    },
+    "create": {},
+    "read": {},
     "update": {
       "$or": [
         {
