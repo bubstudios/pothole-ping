@@ -17,6 +17,7 @@ import BureaucracyTracker from '@/pages/BureaucracyTracker';
 import WatchZones from '@/pages/WatchZones';
 import PublicMap from '@/pages/PublicMap';
 import Donate from '@/pages/Donate';
+import ManageSponsors from '@/pages/ManageSponsors';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,6 +48,7 @@ const AuthenticatedApp = () => {
         <Route path="/hall-of-shame" element={<HallOfShame />} />
         <Route path="/bureaucracy" element={<BureaucracyTracker />} />
         <Route path="/watch-zones" element={<WatchZones />} />
+        <Route path="/manage-sponsors" element={<ManageSponsors />} />
       </Route>
     </Routes>
   );
