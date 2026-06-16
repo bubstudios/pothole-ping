@@ -65,6 +65,13 @@ function StepTiers({ onSelect, onCustom, customAmount, setCustomAmount, recurrin
         <Repeat className={`w-4 h-4 ${recurring ? 'text-pink-500' : ''}`} />
         {recurring ? 'Monthly recurring donation' : 'Make this a monthly donation'}
       </button>
+
+      {customAmount && Number(customAmount) >= 1 && (
+        <Button onClick={() => onSelect(Number(customAmount))} className="w-full gap-2">
+          Continue with ${Number(customAmount)}
+          <ArrowRight className="w-4 h-4" />
+        </Button>
+      )}
     </div>
   );
 }
