@@ -35,9 +35,13 @@
       "type": "string",
       "description": "Physical address"
     },
-    "zip_codes": {
-      "type": "string",
-      "description": "Comma-separated ZIP codes this business serves"
+    "latitude": {
+      "type": "number",
+      "description": "Store latitude for proximity matching"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Store longitude for proximity matching"
     },
     "description": {
       "type": "string",
@@ -60,6 +64,8 @@
   "required": [
     "name",
     "category",
-    "phone"
+    "phone",
+    "latitude",
+    "longitude"
   ]
 }
