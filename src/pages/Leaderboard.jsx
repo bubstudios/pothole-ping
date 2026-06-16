@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Trophy, Medal, Award, MapPin, ThumbsUp, CheckCircle, Camera, MessageCircle, Star, Flame, Loader2, Shield, Zap } from 'lucide-react';
+import { ArrowLeft, Trophy, Medal, Award, MapPin, ThumbsUp, CheckCircle, Camera, MessageCircle, Star, Flame, Loader2, Shield, Zap, Heart, Repeat } from 'lucide-react';
 
 const BADGES = [
   { id: 'first_report', icon: '🥚', label: 'First Report', desc: 'Reported your first pothole', check: (s) => s.reports >= 1 },
@@ -22,6 +22,7 @@ const BADGES = [
 
 export default function Leaderboard() {
   const [stats, setStats] = useState([]);
+  const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,11 +31,12 @@ export default function Leaderboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const [reports, comments, users, reps] = await Promise.all([
+    const [reports, comments, users, reps, donations] = await Promise.all([
       base44.entities.PotholeReport.list('-created_date', 500),
       base44.entities.PotholeComment.list('-created_date', 500),
       base44.entities.User.list(),
       base44.entities.UserReputation.list(),
+      base44.entities.Donation.filter({ status: 'completed' }, '-created_date', 500),
     ]);
 
     // Build karma map
@@ -107,6 +109,23 @@ export default function Leaderboard() {
     }
 
     setStats(sorted);
+
+    // Aggregate completed donations by donor
+    const donorMap = {};
+    for (const d of donations) {
+      const name = d.donor_name || 'Anonymous Supporter';
+      if (!donorMap[name]) {
+        donorMap[name] = { name, total: 0, count: 0, recurringCount: 0 };
+      }
+      donorMap[name].total += d.amount || 0;
+      donorMap[name].count++;
+      if (d.recurring) donorMap[name].recurringCount++;
+    }
+    const sortedDonors = Object.values(donorMap)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+    setDonors(sortedDonors);
+
     setLoading(false);
   };
 
@@ -209,6 +228,53 @@ export default function Leaderboard() {
               )}
             </div>
           </div>
+
+          {/* Top Donors */}
+          {donors.length > 0 && (
+            <div className="bg-card rounded-xl border overflow-hidden">
+              <div className="p-4 border-b bg-muted/50">
+                <h2 className="font-heading font-semibold text-sm flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-pink-500" />
+                  Top Supporters
+                </h2>
+              </div>
+              <div className="divide-y">
+                {donors.map((d, i) => (
+                  <div
+                    key={d.name + i}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
+                  >
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                      i === 0 ? 'bg-yellow-400 text-yellow-900' :
+                      i === 1 ? 'bg-gray-300 text-gray-700' :
+                      i === 2 ? 'bg-orange-300 text-orange-800' :
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{d.name}</p>
+                      <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3 h-3 text-pink-500" />
+                          {d.count} donation{d.count !== 1 ? 's' : ''}
+                        </span>
+                        {d.recurringCount > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Repeat className="w-3 h-3 text-purple-500" />
+                            {d.recurringCount} monthly
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="font-heading font-bold text-sm text-primary">
+                      ${d.total.toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Achievements */}
           <div className="bg-card rounded-xl border overflow-hidden">
