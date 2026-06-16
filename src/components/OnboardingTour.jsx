@@ -14,7 +14,7 @@ const SLIDES = [
     color: 'text-purple-500',
     bg: 'bg-purple-100',
     title: 'Drive & Drop',
-    text: 'While driving, just say "pothole" out loud. We\'ll mark the spot so you can report it later — no need to touch your phone.',
+    text: 'While driving, just say "Pothole Ping" out loud. We\'ll mark the spot so you can report it later — no need to touch your phone.',
   },
   {
     icon: AlertTriangle,
