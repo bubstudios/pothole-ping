@@ -47,7 +47,6 @@ const AuthenticatedApp = () => {
         <Route path="/hall-of-shame" element={<HallOfShame />} />
         <Route path="/bureaucracy" element={<BureaucracyTracker />} />
         <Route path="/watch-zones" element={<WatchZones />} />
-        <Route path="/donate" element={<Donate />} />
       </Route>
     </Routes>
   );

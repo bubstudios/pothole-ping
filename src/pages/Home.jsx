@@ -604,8 +604,8 @@ export default function Home() {
               </div>
             )}
 
-            <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />
-            <SupportButton />
+            {!sidebarOpen && <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />}
+            {!sidebarOpen && <SupportButton />}
             {!sidebarOpen && <HeatmapControls
               enabled={heatmapEnabled}
               onToggle={() => setHeatmapEnabled(!heatmapEnabled)}
