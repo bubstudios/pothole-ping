@@ -587,6 +587,9 @@ export default function Home() {
                 setPendingVoicePins((prev) => prev.filter((p) => p.lat !== pin.lat || p.lng !== pin.lng));
                 openReportAt(pin.lat, pin.lng);
               }}
+              onVoicePinDelete={(pin) => {
+                setPendingVoicePins((prev) => prev.filter((p) => p.lat !== pin.lat || p.lng !== pin.lng));
+              }}
               flyToCenter={flyToCenter}
               userPosition={userPosition}
               pendingVoicePins={pendingVoicePins}

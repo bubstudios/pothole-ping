@@ -145,6 +145,7 @@ export default function PotholeMap({
   onPotholeClick,
   onNewPinClick,
   onVoicePinClick,
+  onVoicePinDelete,
   flyToCenter,
   userPosition,
   pendingVoicePins = [],
@@ -202,8 +203,27 @@ export default function PotholeMap({
             key={`voice-${pin.lat}-${pin.lng}-${i}`}
             position={[pin.lat, pin.lng]}
             icon={voicePinIcon}
-            eventHandlers={{ click: () => onVoicePinClick?.(pin) }}
-          />
+          >
+            <Popup>
+              <div className="text-sm space-y-2 min-w-[140px]">
+                <p className="font-semibold text-xs">Voice-dropped pin</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onVoicePinClick?.(pin)}
+                    className="flex-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:bg-primary/90"
+                  >
+                    Report
+                  </button>
+                  <button
+                    onClick={() => onVoicePinDelete?.(pin)}
+                    className="flex-1 px-3 py-1.5 bg-red-500 text-white rounded-md text-xs font-medium hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
         ))}
 
         {userPosition && (
