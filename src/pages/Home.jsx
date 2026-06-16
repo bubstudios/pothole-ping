@@ -279,7 +279,8 @@ export default function Home() {
     setNewPin(null);
     setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin.lat || p.lng !== newPin.lng));
     setJurisdictionInfo(null);
-    setSidebarOpen(false);
+    // Keep sidebar open — transition to the detail view so user can leave comments
+    setSelectedPothole(created);
     loadPotholes();
 
     // Auto-submit if any submission method is available
