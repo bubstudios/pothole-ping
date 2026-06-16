@@ -110,9 +110,7 @@ export default function Home() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    try { return !localStorage.getItem('potholeping_onboarded'); } catch { return true; }
-  });
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [pendingVoicePins, setPendingVoicePins] = useState(() => {
     try {
       const saved = localStorage.getItem('potholeping_voice_pins');
@@ -139,6 +137,12 @@ export default function Home() {
       setCurrentUser(user);
       const reps = await base44.entities.UserReputation.filter({ created_by_id: user.id });
       setUserRep(reps[0] || null);
+      // Check per-user onboarding — not browser-wide
+      try {
+        if (!localStorage.getItem(`potholeping_onboarded_${user.id}`)) {
+          setShowOnboarding(true);
+        }
+      } catch {}
     } catch (e) {}
   };
 
@@ -757,7 +761,9 @@ export default function Home() {
         <OnboardingTour
           onClose={() => {
             setShowOnboarding(false);
-            localStorage.setItem('potholeping_onboarded', '1');
+            if (currentUser) {
+              localStorage.setItem(`potholeping_onboarded_${currentUser.id}`, '1');
+            }
           }}
         />
       )}
