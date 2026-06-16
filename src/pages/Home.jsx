@@ -25,6 +25,7 @@ import DuplicateWarning from '@/components/pothole/DuplicateWarning';
 import DelayedReportPrompt from '@/components/pothole/DelayedReportPrompt';
 import FeedbackModal from '@/components/FeedbackModal';
 import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
+import OnboardingTour from '@/components/OnboardingTour';
 
 // Verified jurisdiction contact overrides — applied after LLM lookup
 const JURISDICTION_OVERRIDES = [
@@ -109,6 +110,9 @@ export default function Home() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem('potholeping_onboarded'); } catch { return true; }
+  });
   const [pendingVoicePins, setPendingVoicePins] = useState(() => {
     try {
       const saved = localStorage.getItem('potholeping_voice_pins');
@@ -748,6 +752,15 @@ export default function Home() {
       />
 
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+
+      {showOnboarding && (
+        <OnboardingTour
+          onClose={() => {
+            setShowOnboarding(false);
+            localStorage.setItem('potholeping_onboarded', '1');
+          }}
+        />
+      )}
 
       <div className="sm:hidden flex border-t bg-card">
         <button
