@@ -36,7 +36,6 @@ const JURISDICTION_OVERRIDES = [
   },
   {
     match: 'St. Louis County',
-    email: 'slrp@stlouiscountymo.gov',
     phone: '3146158538',
     website: 'https://csportal.stlouiscountymo.gov',
   },
