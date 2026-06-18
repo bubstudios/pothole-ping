@@ -337,6 +337,16 @@ export default function Home() {
           fixes_marked: (rep.fixes_marked || 0) + 1,
         });
       }
+      // Send thank-you email to the agency
+      if (pothole.submission_email) {
+        try {
+          await base44.integrations.Core.SendEmail({
+            to: pothole.submission_email,
+            subject: `Thank you — Pothole fixed at ${pothole.address || `${pothole.latitude}, ${pothole.longitude}`}`,
+            body: `The community has confirmed that the pothole at this location has been filled:\n\n${pothole.address || `${pothole.latitude}, ${pothole.longitude}`}\n\nThank you for your quick response and for keeping our roads safe!\n\n— PotholePing Community`,
+          });
+        } catch (e) {}
+      }
       // Celebrate!
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#f97316', '#fbbf24', '#3b82f6'] });
     } else if (pothole.status === 'fixed') {
