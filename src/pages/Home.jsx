@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug, Camera, TrendingUp } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SupportButton from '@/components/SupportButton';
 import {
@@ -511,6 +511,20 @@ export default function Home() {
             <MessageCircle className="w-3.5 h-3.5" />
             Neighborhoods
           </Link>
+          <Link
+            to="/photos"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-purple-600 border-purple-200 hover:bg-purple-50 transition-colors"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            Photos
+          </Link>
+          <Link
+            to="/analytics"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-teal-600 border-teal-200 hover:bg-teal-50 transition-colors"
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            Analytics
+          </Link>
           <div className="flex border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('map')}
@@ -563,6 +577,18 @@ export default function Home() {
                   <Link to="/watch-zones" className="flex items-center gap-2 cursor-pointer">
                     <MessageCircle className="w-4 h-4" />
                     Neighborhood Watch
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/photos" className="flex items-center gap-2 cursor-pointer">
+                    <Camera className="w-4 h-4" />
+                    Photo Gallery
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/analytics" className="flex items-center gap-2 cursor-pointer">
+                    <TrendingUp className="w-4 h-4" />
+                    Analytics
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowFixed(!showFixed)} className="flex items-center gap-2 cursor-pointer">

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { base44 } from '@/api/base44Client';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Code, Copy, Check } from 'lucide-react';
 import moment from 'moment';
 
 const severityColors = {
@@ -30,6 +30,8 @@ function createPotholeIcon(severity) {
 
 export default function PublicMap() {
   const [potholes, setPotholes] = useState([]);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     base44.entities.PotholeReport.list('-created_date', 300).then(setPotholes);
@@ -37,10 +39,11 @@ export default function PublicMap() {
 
   const active = potholes.filter((p) => p.status !== 'fixed');
 
+  const embedCode = `<iframe src="${window.location.origin}/map" width="100%" height="500" style="border:0;border-radius:12px;" title="PotholePing Community Map"></iframe>`;
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 bg-card border-b z-10 flex-shrink-0">
+      <header className="flex items-center justify-between px-4 py-3 bg-card border-b z-10 flex-shrink-0 safe-top">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-primary-foreground" />
@@ -94,7 +97,6 @@ export default function PublicMap() {
             ))}
         </MapContainer>
 
-        {/* Privacy overlay — gentle CTA */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-card/95 backdrop-blur border shadow-lg rounded-2xl px-5 py-3 text-center">
           <p className="text-sm font-heading font-semibold">PotholePing</p>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -103,9 +105,33 @@ export default function PublicMap() {
         </div>
       </div>
 
-      <footer className="flex-shrink-0 py-2 px-4 bg-card border-t text-center text-xs text-muted-foreground">
-        Public map — view only. Sign up to report and track potholes.
+      <footer className="flex-shrink-0 py-2 px-4 bg-card border-t text-center text-xs text-muted-foreground flex items-center justify-between">
+        <span>Public map — view only. Sign up to report and track potholes.</span>
+        <button
+          onClick={() => setShowEmbed(!showEmbed)}
+          className="flex items-center gap-1 text-primary hover:underline text-xs"
+        >
+          <Code className="w-3.5 h-3.5" />
+          {showEmbed ? 'Hide embed' : 'Embed map'}
+        </button>
       </footer>
+
+      {showEmbed && (
+        <div className="flex-shrink-0 px-4 py-3 bg-muted border-t">
+          <p className="text-xs font-medium mb-2">Embed this map on your website:</p>
+          <div className="relative">
+            <code className="block bg-card border rounded-lg p-3 text-xs whitespace-pre-wrap break-all font-mono text-muted-foreground">
+              {embedCode}
+            </code>
+            <button
+              onClick={() => { navigator.clipboard.writeText(embedCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+              className="absolute top-2 right-2 p-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

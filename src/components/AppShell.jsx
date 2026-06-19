@@ -8,6 +8,8 @@ import BureaucracyTracker from '@/pages/BureaucracyTracker';
 import WatchZones from '@/pages/WatchZones';
 import Settings from '@/pages/Settings';
 import ManageSponsors from '@/pages/ManageSponsors';
+import PhotoGallery from '@/pages/PhotoGallery';
+import AnalyticsDashboard from '@/pages/AnalyticsDashboard';
 
 const TABS = [
   { path: '/', Page: Home },
@@ -15,6 +17,8 @@ const TABS = [
   { path: '/hall-of-shame', Page: HallOfShame },
   { path: '/bureaucracy', Page: BureaucracyTracker },
   { path: '/watch-zones', Page: WatchZones },
+  { path: '/photos', Page: PhotoGallery },
+  { path: '/analytics', Page: AnalyticsDashboard },
   { path: '/settings', Page: Settings },
   { path: '/manage-sponsors', Page: ManageSponsors },
 ];

@@ -114,6 +114,10 @@
     "submission_details": {
       "type": "string",
       "description": "Details about how the report was submitted"
+    },
+    "last_reminded_date": {
+      "type": "string",
+      "description": "Date of last automated reminder sent to jurisdiction"
     }
   },
   "required": [
