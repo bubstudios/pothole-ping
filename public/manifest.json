@@ -1,26 +1,37 @@
 {
   "name": "PotholePing",
   "short_name": "PotholePing",
-  "description": "Crowdsourced pothole reporting and tracking for safer roads",
+  "description": "Crowdsourced pothole reporting & tracking — report, track, and get potholes fixed in your community",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#fdfbf7",
-  "theme_color": "#f97316",
   "orientation": "portrait-primary",
+  "theme_color": "#f97316",
+  "background_color": "#1a1a2e",
+  "categories": ["navigation", "utilities", "social"],
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
-      "src": "https://base44.com/logo_v2.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "https://media.base44.com/images/public/6a2e382ebe9c307113765829/afe865299_generated_image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6a2e382ebe9c307113765829/afe865299_generated_image.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6a2e382ebe9c307113765829/afe865299_generated_image.png",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any"
     }
   ],
-  "categories": ["navigation", "utilities", "social"],
-  "shortcuts": [
-    {
-      "name": "Report Pothole",
-      "url": "/?action=report",
-      "description": "Quickly report a new pothole"
-    }
-  ]
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
