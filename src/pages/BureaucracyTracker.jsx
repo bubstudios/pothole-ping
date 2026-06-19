@@ -97,7 +97,7 @@ export default function BureaucracyTracker() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3">
+      <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3 safe-top">
         <Link to="/" className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>

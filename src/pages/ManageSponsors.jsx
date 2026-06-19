@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/ui/mobile-select';
 import { ArrowLeft, Plus, Trash2, Store, Loader2, MapPin, Globe, Phone, X } from 'lucide-react';
 
 const CATEGORIES = [
@@ -90,7 +90,7 @@ export default function ManageSponsors() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between px-4 py-3 bg-card border-b sticky top-0 z-10">
+      <header className="flex items-center justify-between px-4 py-3 bg-card border-b sticky top-0 z-10 safe-top">
         <div className="flex items-center gap-3">
           <Link to="/" className="p-1.5 hover:bg-muted rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -122,16 +122,12 @@ export default function ManageSponsors() {
             />
 
             <div className="grid grid-cols-2 gap-2">
-              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.category}
+                onValueChange={(v) => setForm({ ...form, category: v })}
+                options={CATEGORIES}
+                placeholder="Category"
+              />
               <Input
                 placeholder="Phone *"
                 value={form.phone}

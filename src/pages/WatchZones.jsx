@@ -274,7 +274,7 @@ export default function WatchZones() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b safe-top">
         <div className="flex items-center gap-3 px-4 h-14 max-w-2xl mx-auto">
           <Link to="/" className="p-1.5 -ml-1.5 hover:bg-muted rounded-lg">
             <ArrowLeft className="w-5 h-5" />

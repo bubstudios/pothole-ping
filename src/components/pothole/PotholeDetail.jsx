@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/ui/mobile-select';
 import { ArrowLeft, ThumbsUp, Send, MapPin, Clock, MessageCircle, AlertTriangle, Zap, CheckCircle, Loader2 } from 'lucide-react';
 import JurisdictionCard from './JurisdictionCard';
 import DamageReportForm from './DamageReportForm';
@@ -34,6 +34,13 @@ function isStale(pothole) {
   const daysSince = (Date.now() - new Date(refDate).getTime()) / (24 * 60 * 60 * 1000);
   return daysSince > 30;
 }
+
+const severityOptions = [
+  { value: 'minor', label: 'Minor' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'severe', label: 'Severe' },
+  { value: 'dangerous', label: 'Dangerous' },
+];
 
 export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote, onSeverityChange }) {
   const [comments, setComments] = useState([]);
@@ -111,17 +118,13 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
         </div>
 
         <div className="flex gap-2 mt-2 flex-wrap items-center">
-          <Select value={pothole.severity} onValueChange={handleSeverityChange}>
-            <SelectTrigger className={`h-auto py-0.5 px-2 text-xs rounded-full font-medium capitalize border-0 w-auto gap-1 ${severityBadge[pothole.severity]}`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="z-[9999]">
-              <SelectItem value="minor">Minor</SelectItem>
-              <SelectItem value="moderate">Moderate</SelectItem>
-              <SelectItem value="severe">Severe</SelectItem>
-              <SelectItem value="dangerous">Dangerous</SelectItem>
-            </SelectContent>
-          </Select>
+          <MobileSelect
+            value={pothole.severity}
+            onValueChange={handleSeverityChange}
+            options={severityOptions}
+            triggerClassName={`h-auto py-0.5 px-2 text-xs rounded-full font-medium capitalize border-0 w-auto gap-1 ${severityBadge[pothole.severity]}`}
+            placeholder="Severity"
+          />
           <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${statusBadge[pothole.status] || 'bg-purple-100 text-purple-700'}`}>
             {pothole.status?.replace('_', ' ')}
           </span>

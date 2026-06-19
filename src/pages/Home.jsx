@@ -453,7 +453,7 @@ export default function Home() {
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 bg-card border-b z-10 flex-shrink-0">
+      <header className="flex items-center justify-between px-4 py-3 bg-card border-b z-10 flex-shrink-0 safe-top">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-primary-foreground" />

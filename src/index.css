@@ -105,6 +105,20 @@
     user-select: text;
   }
 
+  /* Minimum touch target height for mobile accessibility */
+  button, [role="button"], input, select, textarea, .clickable {
+    min-height: 44px;
+  }
+
+  /* Hide scrollbars while keeping content scrollable */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Safe area insets for notched devices */
   .safe-top {
     padding-top: env(safe-area-inset-top, 0px);

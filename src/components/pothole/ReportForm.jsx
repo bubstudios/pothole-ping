@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/ui/mobile-select';
 import { Label } from '@/components/ui/label';
 import { Loader2, MapPin, AlertTriangle, Camera, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -59,17 +59,18 @@ export default function ReportForm({ pin, jurisdictionInfo, isLoadingJurisdictio
 
       <div>
         <Label htmlFor="severity">Severity</Label>
-        <Select value={severity} onValueChange={setSeverity}>
-          <SelectTrigger className="mt-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="z-[9999]">
-            <SelectItem value="minor">Minor — small crack or dip</SelectItem>
-            <SelectItem value="moderate">Moderate — noticeable hole</SelectItem>
-            <SelectItem value="severe">Severe — large hole, avoid if possible</SelectItem>
-            <SelectItem value="dangerous">Dangerous — could damage vehicles</SelectItem>
-          </SelectContent>
-        </Select>
+        <MobileSelect
+          value={severity}
+          onValueChange={setSeverity}
+          options={[
+            { value: 'minor', label: 'Minor — small crack or dip' },
+            { value: 'moderate', label: 'Moderate — noticeable hole' },
+            { value: 'severe', label: 'Severe — large hole, avoid if possible' },
+            { value: 'dangerous', label: 'Dangerous — could damage vehicles' },
+          ]}
+          className="mt-1"
+          placeholder="Select severity"
+        />
       </div>
 
       <div>
