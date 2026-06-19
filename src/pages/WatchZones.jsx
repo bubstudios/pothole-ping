@@ -201,6 +201,9 @@ export default function WatchZones() {
 
   useEffect(() => {
     loadSubscriptions().then(() => setLoading(false));
+    const handler = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.addEventListener('potholeping-scroll-reset', handler);
+    return () => window.removeEventListener('potholeping-scroll-reset', handler);
   }, [loadSubscriptions]);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,12 @@ export default function Settings() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    const handler = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.addEventListener('potholeping-scroll-reset', handler);
+    return () => window.removeEventListener('potholeping-scroll-reset', handler);
+  }, []);
 
   const handleDeleteAccount = async () => {
     setDeleting(true);

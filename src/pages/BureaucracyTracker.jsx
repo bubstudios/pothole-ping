@@ -35,6 +35,9 @@ export default function BureaucracyTracker() {
 
   useEffect(() => {
     loadData();
+    const handler = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.addEventListener('potholeping-scroll-reset', handler);
+    return () => window.removeEventListener('potholeping-scroll-reset', handler);
   }, []);
 
   const loadData = async () => {

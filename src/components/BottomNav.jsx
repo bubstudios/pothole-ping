@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Map, Trophy, Building2, MessageCircle, Menu } from 'lucide-react';
 
 const TABS = [
@@ -11,6 +11,17 @@ const TABS = [
 
 export default function BottomNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleTabClick = (e, path, isActive) => {
+    if (isActive) {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('potholeping-scroll-reset', { detail: { path } }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate(path);
+    }
+  };
 
   return (
     <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around safe-bottom"
@@ -20,16 +31,16 @@ export default function BottomNav() {
         const active = location.pathname === tab.path;
         const Icon = tab.icon;
         return (
-          <Link
+          <button
             key={tab.path}
-            to={tab.path}
+            onClick={(e) => handleTabClick(e, tab.path, active)}
             className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
               active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Icon className="w-5 h-5" />
             <span className="text-[10px] font-medium leading-none">{tab.label}</span>
-          </Link>
+          </button>
         );
       })}
     </nav>

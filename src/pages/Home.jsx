@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SupportButton from '@/components/SupportButton';
@@ -17,7 +16,6 @@ import PotholeMap from '@/components/map/PotholeMap';
 import HeatmapLayer from '@/components/map/HeatmapLayer';
 import HeatmapControls from '@/components/map/HeatmapControls';
 import ReportForm from '@/components/pothole/ReportForm';
-import PotholeDetail from '@/components/pothole/PotholeDetail';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
 import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
@@ -88,12 +86,12 @@ async function lookupJurisdiction(lat, lng, address) {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
   const [potholes, setPotholes] = useState([]);
   const [isDropping, setIsDropping] = useState(false);
   const [newPin, setNewPin] = useState(null);
   const [jurisdictionInfo, setJurisdictionInfo] = useState(null);
   const [isLoadingJurisdiction, setIsLoadingJurisdiction] = useState(false);
-  const [selectedPothole, setSelectedPothole] = useState(null);
   const [view, setView] = useState('map');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [flyToCenter, setFlyToCenter] = useState(null);
@@ -128,6 +126,21 @@ export default function Home() {
   useEffect(() => {
     loadPotholes();
     loadCurrentUser();
+    // Real-time subscription to keep map in sync with detail page updates
+    const unsub = base44.entities.PotholeReport.subscribe((event) => {
+      if (event.type === 'update') {
+        setPotholes(prev => prev.map(p => p.id === event.id ? { ...p, ...event.data } : p));
+      } else if (event.type === 'create') {
+        setPotholes(prev => [event.data, ...prev]);
+      }
+    });
+    // Scroll-reset listener for BottomNav active-tab click
+    const scrollHandler = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.addEventListener('potholeping-scroll-reset', scrollHandler);
+    return () => {
+      unsub();
+      window.removeEventListener('potholeping-scroll-reset', scrollHandler);
+    };
   }, []);
 
   useEffect(() => {
@@ -212,7 +225,6 @@ export default function Home() {
     if (nearby) {
       setDuplicateCandidate(nearby);
       setNewPin(null);
-      setSelectedPothole(null);
       setSidebarOpen(true);
       setJurisdictionInfo(null);
       setIsLoadingJurisdiction(false);
@@ -221,7 +233,6 @@ export default function Home() {
 
     const pin = { lat, lng };
     setNewPin(pin);
-    setSelectedPothole(null);
     setDuplicateCandidate(null);
     setSidebarOpen(true);
     setJurisdictionInfo(null);
@@ -246,7 +257,6 @@ export default function Home() {
   const handleVoiceReport = useCallback((lat, lng) => {
     setIsDropping(false);
     setPendingVoicePins((prev) => [...prev, { lat, lng, time: Date.now() }]);
-    setSelectedPothole(null);
     setDuplicateCandidate(null);
     setSidebarOpen(false);
     setFlyToCenter([lat, lng]);
@@ -256,7 +266,6 @@ export default function Home() {
 
   const handleNewPinClick = useCallback(() => {
     if (!newPin) return;
-    // Remove the first pending voice pin if one exists for this location
     setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin.lat || p.lng !== newPin.lng));
     openReportAt(newPin.lat, newPin.lng);
   }, [newPin, openReportAt]);
@@ -282,9 +291,10 @@ export default function Home() {
     setNewPin(null);
     setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin.lat || p.lng !== newPin.lng));
     setJurisdictionInfo(null);
-    // Keep sidebar open — transition to the detail view so user can leave comments
-    setSelectedPothole(created);
+    setSidebarOpen(false);
     loadPotholes();
+    // Navigate to the detail page so user can leave comments
+    navigate(`/pothole/${created.id}`);
 
     // Auto-submit if any submission method is available
     if (jurisdictionInfo?.submission_email || jurisdictionInfo?.open311_endpoint) {
@@ -316,11 +326,11 @@ export default function Home() {
   };
 
   const handlePotholeClick = (pothole) => {
-    setSelectedPothole(pothole);
     setNewPin(null);
     setIsDropping(false);
-    setSidebarOpen(true);
-    setFlyToCenter([pothole.latitude, pothole.longitude]);
+    setSidebarOpen(false);
+    setFlyToCenter(null);
+    navigate(`/pothole/${pothole.id}`);
   };
 
   const handleUpvote = async (id, markFixed = false) => {
@@ -337,7 +347,6 @@ export default function Home() {
         : { upvotes: (Number(pothole.upvotes) || 0) + weight, last_confirmed_date: new Date().toISOString() };
 
     setPotholes(prev => prev.map(p => p.id === id ? { ...p, ...optimisticUpdates } : p));
-    setSelectedPothole(prev => prev?.id === id ? { ...prev, ...optimisticUpdates } : prev);
 
     try {
       const rep = await getOrCreateRep();
@@ -415,15 +424,6 @@ export default function Home() {
     openReportAt(pin.lat, pin.lng);
   }, [openReportAt]);
 
-  const handleSeverityChange = async (id, newSeverity) => {
-    await base44.entities.PotholeReport.update(id, { severity: newSeverity });
-    loadPotholes();
-    setSelectedPothole((prev) => {
-      if (prev?.id !== id) return prev;
-      return { ...prev, severity: newSeverity };
-    });
-  };
-
   // Auto-enable proximity alerts when voice listening starts (user is driving)
   useEffect(() => {
     if (isVoiceListening) {
@@ -434,7 +434,6 @@ export default function Home() {
   const startDropping = () => {
     setIsDropping(true);
     setIsVoiceListening(false);
-    setSelectedPothole(null);
     setNewPin(null);
     setDuplicateCandidate(null);
     setSidebarOpen(false);
@@ -705,23 +704,22 @@ export default function Home() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <ScrollArea className="flex-1">
+            <div className="flex-1 overflow-y-auto">
               <div className="p-4">
-                {duplicateCandidate && !newPin && !selectedPothole && (
+                {duplicateCandidate && !newPin && (
                   <DuplicateWarning
                     candidate={duplicateCandidate}
                     distanceFt={distanceFt}
                     onConfirm={(pothole) => {
                       handleUpvote(pothole.id);
-                      setSelectedPothole(pothole);
                       setDuplicateCandidate(null);
-                      setFlyToCenter([pothole.latitude, pothole.longitude]);
+                      setSidebarOpen(false);
+                      navigate(`/pothole/${pothole.id}`);
                     }}
                     onReportAnyway={() => {
                       const lat = Number(duplicateCandidate.latitude);
                       const lng = Number(duplicateCandidate.longitude);
-                      // Adjust slightly so it's a new pin near the original
-                      const offset = 0.00015; // ~50ft in lat
+                      const offset = 0.00015;
                       const pin = { lat: lat + offset, lng: lng + offset };
                       setDuplicateCandidate(null);
                       setNewPin(pin);
@@ -751,20 +749,8 @@ export default function Home() {
                     onCancel={handleCancelReport}
                   />
                 )}
-                {selectedPothole && !newPin && !duplicateCandidate && (
-                  <PotholeDetail
-                    pothole={selectedPothole}
-                    currentUserId={currentUser?.id}
-                    onBack={() => {
-                      setSelectedPothole(null);
-                      setSidebarOpen(false);
-                    }}
-                    onUpvote={handleUpvote}
-                    onSeverityChange={handleSeverityChange}
-                  />
-                )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         )}
       </div>

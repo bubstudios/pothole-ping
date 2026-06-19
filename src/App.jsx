@@ -12,15 +12,9 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import Home from '@/pages/Home';
-import Leaderboard from '@/pages/Leaderboard';
-import HallOfShame from '@/pages/HallOfShame';
-import BureaucracyTracker from '@/pages/BureaucracyTracker';
-import WatchZones from '@/pages/WatchZones';
+import PotholeDetailPage from '@/pages/PotholeDetailPage';
 import PublicMap from '@/pages/PublicMap';
 import Donate from '@/pages/Donate';
-import ManageSponsors from '@/pages/ManageSponsors';
-import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,15 +41,8 @@ const AuthenticatedApp = () => {
         <Route path="/map" element={<PublicMap />} />
         <Route path="/donate" element={<Donate />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-          <Route element={<AppShell />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/hall-of-shame" element={<HallOfShame />} />
-            <Route path="/bureaucracy" element={<BureaucracyTracker />} />
-            <Route path="/watch-zones" element={<WatchZones />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/manage-sponsors" element={<ManageSponsors />} />
-          </Route>
+          <Route path="/pothole/:id" element={<PotholeDetailPage />} />
+          <Route path="/*" element={<AppShell />} />
         </Route>
       </Routes>
     </ThemeProvider>
