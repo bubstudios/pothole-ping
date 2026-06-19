@@ -280,7 +280,7 @@ export default function WatchZones() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 py-4 pb-20 sm:pb-4 space-y-4">
         {/* Search */}
         <div className="flex gap-2">
           <div className="relative flex-1">

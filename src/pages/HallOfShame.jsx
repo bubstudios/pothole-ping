@@ -64,7 +64,7 @@ export default function HallOfShame() {
       </header>
 
       <ScrollArea className="h-[calc(100vh-57px)]">
-        <div className="max-w-2xl mx-auto p-4 space-y-3">
+        <div className="max-w-2xl mx-auto p-4 pb-20 sm:pb-4 space-y-3">
           {potholes.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-30" />

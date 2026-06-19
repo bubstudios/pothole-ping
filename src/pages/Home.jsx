@@ -24,6 +24,7 @@ import ProximityAlert from '@/components/pothole/ProximityAlert';
 import DuplicateWarning from '@/components/pothole/DuplicateWarning';
 import DelayedReportPrompt from '@/components/pothole/DelayedReportPrompt';
 import FeedbackModal from '@/components/FeedbackModal';
+import PullToRefresh from '@/components/PullToRefresh';
 import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
 import OnboardingTour from '@/components/OnboardingTour';
 
@@ -325,79 +326,86 @@ export default function Home() {
   const handleUpvote = async (id, markFixed = false) => {
     const pothole = potholes.find((p) => p.id === id);
     if (!pothole) return;
-    const rep = await getOrCreateRep();
 
-    if (markFixed) {
-      await base44.entities.PotholeReport.update(id, {
-        status: 'fixed',
-        fixed_by: currentUser?.id || '',
-      });
-      if (rep) {
-        await base44.entities.UserReputation.update(rep.id, {
-          karma: (rep.karma || 0) + 5,
-          fixes_marked: (rep.fixes_marked || 0) + 1,
+    const weight = getWeight();
+
+    // Optimistic UI update — update local state immediately
+    const optimisticUpdates = markFixed
+      ? { status: 'fixed', fixed_by: currentUser?.id || '' }
+      : pothole.status === 'fixed'
+        ? { status: 'disputed', disputed_by: currentUser?.id || '' }
+        : { upvotes: (Number(pothole.upvotes) || 0) + weight, last_confirmed_date: new Date().toISOString() };
+
+    setPotholes(prev => prev.map(p => p.id === id ? { ...p, ...optimisticUpdates } : p));
+    setSelectedPothole(prev => prev?.id === id ? { ...prev, ...optimisticUpdates } : prev);
+
+    try {
+      const rep = await getOrCreateRep();
+
+      if (markFixed) {
+        await base44.entities.PotholeReport.update(id, {
+          status: 'fixed',
+          fixed_by: currentUser?.id || '',
         });
-      }
-      // Send thank-you email to the agency
-      if (pothole.submission_email) {
-        try {
-          await base44.integrations.Core.SendEmail({
-            to: pothole.submission_email,
-            subject: `Thank you — Pothole fixed at ${pothole.address || `${pothole.latitude}, ${pothole.longitude}`}`,
-            body: `The community has confirmed that the pothole at this location has been filled:\n\n${pothole.address || `${pothole.latitude}, ${pothole.longitude}`}\n\nThank you for your quick response and for keeping our roads safe!\n\n— PotholePing Community`,
+        if (rep) {
+          await base44.entities.UserReputation.update(rep.id, {
+            karma: (rep.karma || 0) + 5,
+            fixes_marked: (rep.fixes_marked || 0) + 1,
           });
-        } catch (e) {}
-      }
-      // Celebrate!
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#f97316', '#fbbf24', '#3b82f6'] });
-    } else if (pothole.status === 'fixed') {
-      // Dispute — user says it's still there
-      await base44.entities.PotholeReport.update(id, {
-        status: 'disputed',
-        disputed_by: currentUser?.id || '',
-      });
-      // Penalize the fixer
-      if (pothole.fixed_by) {
-        const fixerReps = await base44.entities.UserReputation.filter({ created_by_id: pothole.fixed_by });
-        if (fixerReps[0]) {
-          await base44.entities.UserReputation.update(fixerReps[0].id, {
-            karma: (fixerReps[0].karma || 0) - 3,
-            fixes_disputed: (fixerReps[0].fixes_disputed || 0) + 1,
+          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 5, fixes_marked: (prev.fixes_marked || 0) + 1 } : prev);
+        }
+        // Send thank-you email to the agency
+        if (pothole.submission_email) {
+          try {
+            await base44.integrations.Core.SendEmail({
+              to: pothole.submission_email,
+              subject: `Thank you — Pothole fixed at ${pothole.address || `${pothole.latitude}, ${pothole.longitude}`}`,
+              body: `The community has confirmed that the pothole at this location has been filled:\n\n${pothole.address || `${pothole.latitude}, ${pothole.longitude}`}\n\nThank you for your quick response and for keeping our roads safe!\n\n— PotholePing Community`,
+            });
+          } catch (e) {}
+        }
+        // Celebrate!
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#f97316', '#fbbf24', '#3b82f6'] });
+      } else if (pothole.status === 'fixed') {
+        // Dispute — user says it's still there
+        await base44.entities.PotholeReport.update(id, {
+          status: 'disputed',
+          disputed_by: currentUser?.id || '',
+        });
+        // Penalize the fixer
+        if (pothole.fixed_by) {
+          const fixerReps = await base44.entities.UserReputation.filter({ created_by_id: pothole.fixed_by });
+          if (fixerReps[0]) {
+            await base44.entities.UserReputation.update(fixerReps[0].id, {
+              karma: (fixerReps[0].karma || 0) - 3,
+              fixes_disputed: (fixerReps[0].fixes_disputed || 0) + 1,
+            });
+          }
+        }
+        if (rep) {
+          await base44.entities.UserReputation.update(rep.id, {
+            karma: (rep.karma || 0) + 3,
+            confirmations_given: (rep.confirmations_given || 0) + 1,
           });
+          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 3, confirmations_given: (prev.confirmations_given || 0) + 1 } : prev);
+        }
+      } else {
+        await base44.entities.PotholeReport.update(id, {
+          upvotes: (Number(pothole.upvotes) || 0) + weight,
+          last_confirmed_date: new Date().toISOString(),
+        });
+        if (rep) {
+          await base44.entities.UserReputation.update(rep.id, {
+            karma: (rep.karma || 0) + 2,
+            confirmations_given: (rep.confirmations_given || 0) + 1,
+          });
+          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 2, confirmations_given: (prev.confirmations_given || 0) + 1 } : prev);
         }
       }
-      if (rep) {
-        await base44.entities.UserReputation.update(rep.id, {
-          karma: (rep.karma || 0) + 3,
-          confirmations_given: (rep.confirmations_given || 0) + 1,
-        });
-      }
-    } else {
-      const weight = getWeight();
-      const previousUpvotes = Number(pothole.upvotes) || 0;
-      const newUpvotes = previousUpvotes + weight;
-      await base44.entities.PotholeReport.update(id, {
-        upvotes: newUpvotes,
-        last_confirmed_date: new Date().toISOString(),
-      });
-      if (rep) {
-        await base44.entities.UserReputation.update(rep.id, {
-          karma: (rep.karma || 0) + 2,
-          confirmations_given: (rep.confirmations_given || 0) + 1,
-        });
-      }
+    } catch (e) {
+      // Revert on failure
+      loadPotholes();
     }
-
-    loadPotholes();
-    setSelectedPothole((prev) => {
-      if (prev?.id !== id) return prev;
-      const updates = markFixed
-        ? { status: 'fixed', fixed_by: currentUser?.id || '' }
-        : pothole.status === 'fixed'
-          ? { status: 'disputed', disputed_by: currentUser?.id || '' }
-          : { upvotes: (prev.upvotes || 0) + getWeight(), last_confirmed_date: new Date().toISOString() };
-      return { ...prev, ...updates };
-    });
   };
 
   const handleDelayedPrompt = useCallback((pin) => {
@@ -504,7 +512,7 @@ export default function Home() {
             <MessageCircle className="w-3.5 h-3.5" />
             Neighborhoods
           </Link>
-          <div className="hidden sm:flex border rounded-lg overflow-hidden">
+          <div className="flex border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('map')}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -664,8 +672,8 @@ export default function Home() {
                 />
               </div>
             </div>
-            <ScrollArea className="flex-1">
-              <div className="p-3 space-y-2">
+            <PullToRefresh onRefresh={loadPotholes} className="flex-1 overflow-y-auto">
+              <div className="p-3 space-y-2 pb-14 sm:pb-0">
                 {filteredPotholes.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -677,7 +685,7 @@ export default function Home() {
                   ))
                 )}
               </div>
-            </ScrollArea>
+            </PullToRefresh>
           </div>
         )}
 
@@ -787,26 +795,6 @@ export default function Home() {
         />
       )}
 
-      <div className="sm:hidden flex border-t bg-card">
-        <button
-          onClick={() => setView('map')}
-          className={`flex-1 py-2.5 text-xs font-medium text-center transition-colors ${
-            view === 'map' ? 'text-primary border-t-2 border-primary' : 'text-muted-foreground'
-          }`}
-        >
-          <Map className="w-4 h-4 mx-auto mb-0.5" />
-          Map
-        </button>
-        <button
-          onClick={() => setView('list')}
-          className={`flex-1 py-2.5 text-xs font-medium text-center transition-colors ${
-            view === 'list' ? 'text-primary border-t-2 border-primary' : 'text-muted-foreground'
-          }`}
-        >
-          <List className="w-4 h-4 mx-auto mb-0.5" />
-          List
-        </button>
-      </div>
     </div>
   );
 }

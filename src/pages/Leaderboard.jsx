@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import PullToRefresh from '@/components/PullToRefresh';
 import { ArrowLeft, Trophy, Medal, Award, MapPin, ThumbsUp, CheckCircle, Camera, MessageCircle, Star, Flame, Loader2, Shield, Zap, Heart, Repeat } from 'lucide-react';
 
 const BADGES = [
@@ -153,8 +153,8 @@ export default function Leaderboard() {
         </div>
       </header>
 
-      <ScrollArea className="h-[calc(100vh-73px)]">
-        <div className="max-w-2xl mx-auto p-4 space-y-6">
+      <PullToRefresh onRefresh={loadData} className="h-[calc(100vh-73px)] sm:h-[calc(100vh-129px)] overflow-y-auto">
+        <div className="max-w-2xl mx-auto p-4 space-y-6 pb-14 sm:pb-0">
 
           {/* Top 3 Spotlight */}
           {stats.slice(0, 3).length > 0 && (
@@ -305,7 +305,7 @@ export default function Leaderboard() {
           </div>
 
         </div>
-      </ScrollArea>
+      </PullToRefresh>
     </div>
   );
 }
