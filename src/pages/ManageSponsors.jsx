@@ -90,7 +90,7 @@ export default function ManageSponsors() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between px-4 py-3 bg-card border-b sticky top-0 z-10 safe-top">
+      <header className="flex items-center justify-between px-4 py-3 bg-card border-b sticky top-0 z-10" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <div className="flex items-center gap-3">
           <Link to="/" className="p-1.5 hover:bg-muted rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />

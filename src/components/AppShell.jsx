@@ -1,5 +1,6 @@
-import { Outlet, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useRef, useEffect } from 'react';
 import BottomNav from './BottomNav';
 import Home from '@/pages/Home';
 import Leaderboard from '@/pages/Leaderboard';
@@ -29,27 +30,45 @@ const TABS = [
 
 export default function AppShell() {
   const location = useLocation();
+  const prevPathRef = useRef(location.pathname);
+  const directionRef = useRef(1);
+
+  useEffect(() => {
+    const prevIdx = TABS.findIndex((t) => t.path === prevPathRef.current);
+    const currIdx = TABS.findIndex((t) => t.path === location.pathname);
+    // Forward = moving right in tabs array; Back = moving left
+    directionRef.current = currIdx >= prevIdx ? 1 : -1;
+    prevPathRef.current = location.pathname;
+  }, [location.pathname]);
 
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={location.pathname}
-          initial={{ x: 300, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -300, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        >
-          {TABS.map(({ path, Page }) => {
-            const isActive = location.pathname === path;
-            return (
-              <div key={path} className={isActive ? '' : 'hidden'}>
-                <Page />
-              </div>
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
+    <div className="min-h-[100dvh] bg-background relative overflow-hidden">
+      {TABS.map(({ path, Page }) => {
+        const active = location.pathname === path;
+        const dir = directionRef.current;
+        return (
+          <motion.div
+            key={path}
+            initial={false}
+            animate={{
+              x: active ? 0 : -dir * 150,
+              opacity: active ? 1 : 0,
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              visibility: active ? 'visible' : 'hidden',
+              pointerEvents: active ? 'auto' : 'none',
+              zIndex: active ? 10 : 0,
+            }}
+          >
+            <div className="h-full overflow-y-auto">
+              <Page />
+            </div>
+          </motion.div>
+        );
+      })}
       <BottomNav />
     </div>
   );

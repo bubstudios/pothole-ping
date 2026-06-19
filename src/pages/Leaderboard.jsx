@@ -146,7 +146,7 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="flex items-center gap-4 px-4 py-4 bg-card border-b sticky top-0 z-10 safe-top">
+      <header className="flex items-center gap-4 px-4 py-4 bg-card border-b sticky top-0 z-10" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <Link to="/" className="p-1.5 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
