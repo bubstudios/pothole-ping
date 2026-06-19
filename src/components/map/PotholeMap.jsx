@@ -87,20 +87,20 @@ function FlyToLocation({ center }) {
   return null;
 }
 
-function FollowUserPosition({ position }) {
+function FollowUserPosition({ position, enabled }) {
   const map = useMap();
   const lastMove = useRef(0);
 
   useEffect(() => {
+    if (!enabled) return;
     if (!position || isNaN(position.lat) || isNaN(position.lng)) return;
 
-    // Only pan if enough time has passed (smooth following, not jittery)
     const now = Date.now();
     if (now - lastMove.current > 2000) {
       lastMove.current = now;
       map.panTo([position.lat, position.lng], { animate: true, duration: 1.5 });
     }
-  }, [position?.lat, position?.lng, map]);
+  }, [position?.lat, position?.lng, map, enabled]);
 
   return null;
 }
@@ -148,6 +148,8 @@ export default function PotholeMap({
   onVoicePinDelete,
   flyToCenter,
   userPosition,
+  followUser = true,
+  onToggleFollow,
   pendingVoicePins = [],
   children,
 }) {
@@ -167,7 +169,7 @@ export default function PotholeMap({
         />
         <MapClickHandler onMapClick={onMapClick} isDropping={isDropping} />
         {flyToCenter && <FlyToLocation center={flyToCenter} />}
-        <FollowUserPosition position={userPosition} />
+        <FollowUserPosition position={userPosition} enabled={followUser} />
 
         {potholes.filter(p => !isNaN(p.latitude) && !isNaN(p.longitude)).map((p) => (
           <Marker
@@ -234,6 +236,17 @@ export default function PotholeMap({
         )}
         {children}
       </MapContainer>
+
+      {/* Follow-me toggle */}
+      {userPosition && onToggleFollow && (
+        <button
+          onClick={onToggleFollow}
+          className="absolute bottom-4 right-4 z-[1000] bg-card border shadow-lg rounded-full w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
+          title={followUser ? 'Stop following my location' : 'Follow my location'}
+        >
+          <span style={{ fontSize: 18 }}>{followUser ? '📍' : '🧭'}</span>
+        </button>
+      )}
 
       {isDropping && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg font-heading font-semibold text-sm animate-bounce">

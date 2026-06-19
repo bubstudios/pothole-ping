@@ -112,6 +112,7 @@ export default function Home() {
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [followUser, setFollowUser] = useState(true);
   const [pendingVoicePins, setPendingVoicePins] = useState(() => {
     try {
       const saved = localStorage.getItem('potholeping_voice_pins');
@@ -604,6 +605,8 @@ export default function Home() {
               }}
               flyToCenter={flyToCenter}
               userPosition={userPosition}
+              followUser={followUser}
+              onToggleFollow={() => setFollowUser(f => !f)}
               pendingVoicePins={pendingVoicePins}
             >
               <HeatmapLayer
