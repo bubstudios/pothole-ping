@@ -1,0 +1,54 @@
+{
+  "name": "UserRoute",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "start_lat": {
+      "type": "number"
+    },
+    "start_lng": {
+      "type": "number"
+    },
+    "start_label": {
+      "type": "string"
+    },
+    "end_lat": {
+      "type": "number"
+    },
+    "end_lng": {
+      "type": "number"
+    },
+    "end_label": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "start_lat",
+    "start_lng",
+    "end_lat",
+    "end_lng"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "user"
+      }
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

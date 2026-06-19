@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import HotZoneLayer from '@/components/map/HotZoneLayer';
 
 const severityColors = {
   minor: '#eab308',
@@ -152,6 +153,7 @@ export default function PotholeMap({
   onToggleFollow,
   sidebarOpen = false,
   pendingVoicePins = [],
+  hotZonesEnabled = false,
   children,
 }) {
   const defaultCenter = [38.7, -90.3]; // STL area
@@ -235,6 +237,7 @@ export default function PotholeMap({
             icon={userLocationIcon}
           />
         )}
+        <HotZoneLayer potholes={potholes} enabled={hotZonesEnabled} />
         {children}
       </MapContainer>
 

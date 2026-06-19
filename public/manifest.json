@@ -1,0 +1,26 @@
+{
+  "name": "PotholePing",
+  "short_name": "PotholePing",
+  "description": "Crowdsourced pothole reporting and tracking for safer roads",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdfbf7",
+  "theme_color": "#f97316",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://base44.com/logo_v2.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["navigation", "utilities", "social"],
+  "shortcuts": [
+    {
+      "name": "Report Pothole",
+      "url": "/?action=report",
+      "description": "Quickly report a new pothole"
+    }
+  ]
+}

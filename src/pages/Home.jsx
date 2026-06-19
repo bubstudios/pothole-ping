@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug, Camera, TrendingUp } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug, Camera, TrendingUp, Route } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SupportButton from '@/components/SupportButton';
 import {
@@ -104,6 +104,7 @@ export default function Home() {
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [heatmapSeverity, setHeatmapSeverity] = useState('all');
   const [heatmapTimeRange, setHeatmapTimeRange] = useState('all');
+  const [hotZonesEnabled, setHotZonesEnabled] = useState(false);
   const [duplicateCandidate, setDuplicateCandidate] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRep, setUserRep] = useState(null);
@@ -505,6 +506,13 @@ export default function Home() {
             Bureaucracy
           </Link>
           <Link
+            to="/commute"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+          >
+            <Route className="w-3.5 h-3.5" />
+            Commute
+          </Link>
+          <Link
             to="/watch-zones"
             className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
           >
@@ -571,6 +579,12 @@ export default function Home() {
                   <Link to="/bureaucracy" className="flex items-center gap-2 cursor-pointer">
                     <Building2 className="w-4 h-4" />
                     Bureaucracy Tracker
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/commute" className="flex items-center gap-2 cursor-pointer">
+                    <Route className="w-4 h-4" />
+                    Commute Saver
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -642,6 +656,7 @@ export default function Home() {
               onToggleFollow={() => setFollowUser(f => !f)}
               sidebarOpen={sidebarOpen}
               pendingVoicePins={pendingVoicePins}
+              hotZonesEnabled={hotZonesEnabled}
             >
               <HeatmapLayer
                 potholes={displayPotholes}
@@ -681,6 +696,18 @@ export default function Home() {
                 return age <= timeCutoffs[heatmapTimeRange];
               }).length : 0}
             />}
+            {!sidebarOpen && (
+              <button
+                onClick={() => setHotZonesEnabled(!hotZonesEnabled)}
+                className={`absolute top-4 left-4 z-[1000] px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg transition-all ${
+                  hotZonesEnabled
+                    ? 'bg-red-600 text-white border-red-500'
+                    : 'bg-card text-muted-foreground border-border hover:bg-muted'
+                }`}
+              >
+                {hotZonesEnabled ? '🔥 Hot Zones ON' : '🔥 Hot Zones'}
+              </button>
+            )}
           </div>
         )}
 

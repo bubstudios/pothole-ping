@@ -15,6 +15,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import PotholeDetailPage from '@/pages/PotholeDetailPage';
 import PublicMap from '@/pages/PublicMap';
 import Donate from '@/pages/Donate';
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ function App() {
         <Router>
           <AuthenticatedApp />
         </Router>
+        <PwaInstallPrompt />
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
