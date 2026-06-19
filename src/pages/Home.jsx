@@ -607,6 +607,7 @@ export default function Home() {
               userPosition={userPosition}
               followUser={followUser}
               onToggleFollow={() => setFollowUser(f => !f)}
+              sidebarOpen={sidebarOpen}
               pendingVoicePins={pendingVoicePins}
             >
               <HeatmapLayer

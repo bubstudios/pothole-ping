@@ -150,6 +150,7 @@ export default function PotholeMap({
   userPosition,
   followUser = true,
   onToggleFollow,
+  sidebarOpen = false,
   pendingVoicePins = [],
   children,
 }) {
@@ -238,7 +239,7 @@ export default function PotholeMap({
       </MapContainer>
 
       {/* Follow-me toggle */}
-      {userPosition && onToggleFollow && (
+      {!sidebarOpen && userPosition && onToggleFollow && (
         <button
           onClick={onToggleFollow}
           className="absolute bottom-20 left-4 z-[1000] bg-card border shadow-lg rounded-full w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
