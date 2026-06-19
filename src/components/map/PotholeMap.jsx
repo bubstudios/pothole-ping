@@ -241,7 +241,7 @@ export default function PotholeMap({
       {userPosition && onToggleFollow && (
         <button
           onClick={onToggleFollow}
-          className="absolute bottom-4 right-4 z-[1000] bg-card border shadow-lg rounded-full w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
+          className="absolute bottom-20 left-4 z-[1000] bg-card border shadow-lg rounded-full w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
           title={followUser ? 'Stop following my location' : 'Follow my location'}
         >
           <span style={{ fontSize: 18 }}>{followUser ? '📍' : '🧭'}</span>
