@@ -65,6 +65,8 @@ export default function CommuteSaver() {
   const [formError, setFormError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [suggestFor, setSuggestFor] = useState(null); // 'start' or 'end'
+  const [routePaths, setRoutePaths] = useState({}); // { routeId: [[lat,lng],...] }
+  const [loadingRoutePath, setLoadingRoutePath] = useState(null);
   const mapRef = useRef();
   const debounceTimers = useRef({ start: null, end: null });
 
@@ -222,19 +224,58 @@ export default function CommuteSaver() {
     loadData();
   };
 
-  const checkRoute = (route) => {
+  const checkRoute = async (route) => {
     setSelectedRoute(route);
-    const nearby = potholes.filter((p) => {
-      const d = pointToSegmentDist(
-        Number(p.latitude), Number(p.longitude),
-        route.start_lat, route.start_lng,
-        route.end_lat, route.end_lng
-      );
-      return d <= ALERT_RADIUS_FT;
-    });
-    setNearbyPotholes(nearby);
     setRouteAnalysis(null);
     setShowAlt(false);
+    
+    // Fetch real road route from OSRM
+    if (!routePaths[route.id]) {
+      setLoadingRoutePath(route.id);
+      try {
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${route.start_lng},${route.start_lat};${route.end_lng},${route.end_lat}?overview=full&geometries=geojson`;
+        const res = await fetch(osrmUrl, { headers: { 'User-Agent': 'PotholePing/1.0' } });
+        const data = await res.json();
+        if (data.routes?.length) {
+          const pathCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+          setRoutePaths(prev => ({ ...prev, [route.id]: pathCoords }));
+          // Find nearby potholes using the actual road path
+          const nearby = potholes.filter((p) => {
+            const path = pathCoords;
+            let minDist = Infinity;
+            for (let i = 0; i < path.length - 1; i++) {
+              const d = pointToSegmentDist(
+                Number(p.latitude), Number(p.longitude),
+                path[i][0], path[i][1],
+                path[i+1][0], path[i+1][1]
+              );
+              if (d < minDist) minDist = d;
+            }
+            return minDist <= ALERT_RADIUS_FT;
+          });
+          setNearbyPotholes(nearby);
+        }
+      } catch (e) {
+        console.error('OSRM route fetch failed', e);
+      }
+      setLoadingRoutePath(null);
+    } else {
+      // Already have the path, just recalculate potholes
+      const path = routePaths[route.id];
+      const nearby = potholes.filter((p) => {
+        let minDist = Infinity;
+        for (let i = 0; i < path.length - 1; i++) {
+          const d = pointToSegmentDist(
+            Number(p.latitude), Number(p.longitude),
+            path[i][0], path[i][1],
+            path[i+1][0], path[i+1][1]
+          );
+          if (d < minDist) minDist = d;
+        }
+        return minDist <= ALERT_RADIUS_FT;
+      });
+      setNearbyPotholes(nearby);
+    }
   };
 
   const analyzeRoute = async (route) => {
@@ -446,6 +487,11 @@ export default function CommuteSaver() {
 
                     {selectedRoute?.id === r.id && (
                       <div className="border-t p-3 space-y-3">
+                        {loadingRoutePath === r.id && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Loading road route...
+                          </div>
+                        )}
                         {/* Mini map */}
                         <div className="h-48 rounded-lg overflow-hidden">
                           <MapContainer
@@ -456,10 +502,19 @@ export default function CommuteSaver() {
                           >
                             <TileLayer attribution='&copy; OSM' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                             {!showAlt || !routeAnalysis?.alternate ? (
-                              <Polyline positions={[[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]]} color="#f97316" weight={3} />
+                              <Polyline
+                                positions={routePaths[r.id] || [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]]}
+                                color="#f97316"
+                                weight={3}
+                                opacity={routePaths[r.id] ? 1 : 0.6}
+                                dashArray={routePaths[r.id] ? undefined : '8 6'}
+                              />
                             ) : (
                               <>
-                                <Polyline positions={[[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]]} color="#f97316" weight={2} opacity={0.4} dashArray="8 8" />
+                                <Polyline
+                                  positions={routeAnalysis.direct.geometry ? routeAnalysis.direct.geometry.coordinates.map(c => [c[1], c[0]]) : (routePaths[r.id] || [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]])}
+                                  color="#f97316" weight={2} opacity={0.4} dashArray="8 8"
+                                />
                                 <Polyline positions={routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]])} color="#22c55e" weight={3} />
                                 <Marker position={[routeAnalysis.alternate.waypoint.lat, routeAnalysis.alternate.waypoint.lng]} icon={L.divIcon({ html: '<div style="width:14px;height:14px;background:#22c55e;border:2px solid white;border-radius:50%;"></div>', iconSize: [14, 14], iconAnchor: [7, 7] })} />
                               </>
@@ -479,7 +534,7 @@ export default function CommuteSaver() {
                                   })}
                                 />
                               ))}
-                            <FitBounds positions={showAlt && routeAnalysis?.alternate ? routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]]) : [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])]} />
+                            <FitBounds positions={showAlt && routeAnalysis?.alternate ? routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]]) : (routePaths[r.id] ? [...routePaths[r.id], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])] : [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])])} />
                           </MapContainer>
                         </div>
 
