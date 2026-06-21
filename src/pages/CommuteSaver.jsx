@@ -83,10 +83,9 @@ export default function CommuteSaver() {
     loadingRef.current = true;
     setLoading(true);
     try {
-      const [r, p] = await Promise.all([
-        base44.entities.UserRoute.filter({}, '-created_date', 50),
-        base44.entities.PotholeReport.filter({ status: { $in: ['reported', 'acknowledged', 'in_progress'] } }, '-created_date', 100),
-      ]);
+      // Sequential to avoid rate limiting
+      const r = await base44.entities.UserRoute.filter({}, '-created_date', 50);
+      const p = await base44.entities.PotholeReport.filter({ status: { $in: ['reported', 'acknowledged', 'in_progress'] } }, '-created_date', 100);
       setRoutes(r);
       setPotholes(p);
     } finally {
