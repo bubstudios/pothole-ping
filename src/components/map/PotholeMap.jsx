@@ -88,20 +88,6 @@ function FlyToLocation({ center }) {
   return null;
 }
 
-function UserInteractionDetector({ onInteract, enabled }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!enabled) return;
-    const handler = () => onInteract?.();
-    map.on('dragstart', handler);
-    map.on('zoomstart', handler);
-    return () => {
-      map.off('dragstart', handler);
-      map.off('zoomstart', handler);
-    };
-  }, [map, enabled, onInteract]);
-  return null;
-}
 
 function FollowUserPosition({ position, enabled }) {
   const map = useMap();
@@ -212,7 +198,7 @@ export default function PotholeMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapClickHandler onMapClick={onMapClick} isDropping={isDropping} />
-        <UserInteractionDetector onInteract={() => followUser && onToggleFollow?.()} enabled={followUser} />
+
         {flyToCenter && <FlyToLocation center={flyToCenter} />}
         <FollowUserPosition position={userPosition} enabled={followUser} />
         <MapRotator heading={heading} enabled={autoRotate} />
