@@ -75,15 +75,22 @@ export default function CommuteSaver() {
     return () => window.removeEventListener('potholeping-scroll-reset', handler);
   }, []);
 
+  const loadingRef = useRef(false);
   const loadData = async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
-    const [r, p] = await Promise.all([
-      base44.entities.UserRoute.list('-created_date', 50),
-      base44.entities.PotholeReport.filter({ status: { $in: ['reported', 'acknowledged', 'in_progress'] } }, '-created_date', 100),
-    ]);
-    setRoutes(r);
-    setPotholes(p);
-    setLoading(false);
+    try {
+      const [r, p] = await Promise.all([
+        base44.entities.UserRoute.filter({}, '-created_date', 50),
+        base44.entities.PotholeReport.filter({ status: { $in: ['reported', 'acknowledged', 'in_progress'] } }, '-created_date', 100),
+      ]);
+      setRoutes(r);
+      setPotholes(p);
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
   };
 
   const geocodeAddress = async (address, which, showSuggestions = false) => {
