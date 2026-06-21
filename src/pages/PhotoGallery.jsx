@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Camera, Search, Filter, X } from 'lucide-react';
@@ -26,11 +26,19 @@ export default function PhotoGallery() {
     return () => window.removeEventListener('potholeping-scroll-reset', handler);
   }, []);
 
+  const loadingRef = useRef(false);
+
   const loadPhotos = async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
-    const data = await base44.entities.PotholeReport.list('-created_date', 300);
-    setPhotos(data.filter((p) => p.photo_url));
-    setLoading(false);
+    try {
+      const data = await base44.entities.PotholeReport.filter({}, '-created_date', 50);
+      setPhotos(data.filter((p) => p.photo_url));
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
   };
 
   const filtered = photos.filter((p) => {
