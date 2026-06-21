@@ -107,29 +107,6 @@ function FollowUserPosition({ position, enabled }) {
   return null;
 }
 
-function MapRotator({ heading, enabled }) {
-  const map = useMap();
-  const prevRotation = useRef(0);
-
-  useEffect(() => {
-    const container = map.getContainer();
-    if (!container) return;
-
-    if (enabled && heading != null && !isNaN(heading)) {
-      const rotation = -heading;
-      container.style.transform = `rotate(${rotation}deg)`;
-      container.style.transition = 'transform 0.3s ease-out';
-      prevRotation.current = rotation;
-    } else if (!enabled && prevRotation.current !== 0) {
-      container.style.transform = 'rotate(0deg)';
-      container.style.transition = 'transform 0.3s ease-out';
-      prevRotation.current = 0;
-    }
-  }, [heading, enabled, map]);
-
-  return null;
-}
-
 const voicePinIcon = L.divIcon({
   className: 'voice-pin-marker',
   html: `<div style="
@@ -178,9 +155,6 @@ export default function PotholeMap({
   sidebarOpen = false,
   pendingVoicePins = [],
   hotZonesEnabled = false,
-  heading = null,
-  autoRotate = false,
-  onToggleAutoRotate,
   children,
 }) {
   const defaultCenter = [38.7, -90.3]; // STL area
@@ -201,7 +175,6 @@ export default function PotholeMap({
 
         {flyToCenter && <FlyToLocation center={flyToCenter} />}
         <FollowUserPosition position={userPosition} enabled={followUser} />
-        <MapRotator heading={heading} enabled={autoRotate} />
 
         {potholes.filter(p => !isNaN(p.latitude) && !isNaN(p.longitude)).map((p) => (
           <Marker
@@ -278,23 +251,6 @@ export default function PotholeMap({
           title={followUser ? 'Stop following my location' : 'Follow my location'}
         >
           <span style={{ fontSize: 18 }}>{followUser ? '📍' : '🧭'}</span>
-        </button>
-      )}
-
-      {/* Compass / Auto-rotate button */}
-      {!sidebarOpen && userPosition && onToggleAutoRotate && (
-        <button
-          onClick={onToggleAutoRotate}
-          className={`absolute bottom-20 left-16 z-[1000] border shadow-lg rounded-full w-10 h-10 flex items-center justify-center transition-colors ${
-            autoRotate
-              ? 'bg-blue-500 border-blue-400 text-white'
-              : 'bg-card border-border hover:bg-muted'
-          }`}
-          title={autoRotate ? 'Lock map north-up' : 'Auto-rotate with heading'}
-        >
-          <span style={{ fontSize: 18, transform: `rotate(${heading || 0}deg)`, transition: 'transform 0.3s ease-out' }}>
-            🧭
-          </span>
         </button>
       )}
 

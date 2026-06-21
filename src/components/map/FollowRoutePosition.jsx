@@ -37,7 +37,7 @@ export default function FollowRoutePosition({ coordinates, userPosition, enabled
       if (result.dist < best.dist) best = result;
     }
 
-    map.panTo(best.proj, { animate: true, duration: 1.5 });
+    map.panTo([userPosition.lat, userPosition.lng], { animate: true, duration: 1.5 });
   }, [userPosition?.lat, userPosition?.lng, coordinates, map, enabled]);
 
   return null;

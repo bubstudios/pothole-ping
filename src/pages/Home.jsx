@@ -114,8 +114,6 @@ export default function Home() {
   const [avoidanceCount, setAvoidanceCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [followUser, setFollowUser] = useState(true);
-  const [mapHeading, setMapHeading] = useState(null);
-  const [autoRotateMap, setAutoRotateMap] = useState(false);
   const [commuterRouteData, setCommuterRouteData] = useState(null);
   const [pendingVoicePins, setPendingVoicePins] = useState(() => {
     try {
@@ -508,7 +506,6 @@ export default function Home() {
             onToggle={() => setProximityAlertsOn(!proximityAlertsOn)}
             onLocationChange={(loc) => {
               setUserPosition(loc);
-              setMapHeading(loc.heading != null && loc.speed > 2 ? loc.heading : null);
             }}
             onDangerNearby={setDangerNearby}
             onAvoidance={handleAvoidance}
@@ -682,13 +679,10 @@ export default function Home() {
               flyToCenter={flyToCenter}
               userPosition={userPosition}
               followUser={followUser}
-              onToggleFollow={() => { setFollowUser(f => !f); setAutoRotateMap(false); }}
+              onToggleFollow={() => setFollowUser(f => !f)}
               sidebarOpen={sidebarOpen}
               pendingVoicePins={pendingVoicePins}
               hotZonesEnabled={hotZonesEnabled}
-              heading={mapHeading}
-              autoRotate={autoRotateMap && followUser}
-              onToggleAutoRotate={() => setAutoRotateMap(r => !r)}
             >
               <HeatmapLayer
                 potholes={displayPotholes}
