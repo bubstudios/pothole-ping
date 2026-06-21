@@ -553,8 +553,8 @@ export default function CommuteSaver() {
                                   <Button
                                     onClick={() => {
                                       sessionStorage.setItem('potholeping_commuter_route', JSON.stringify({
-                                        direct: routeAnalysis.direct.geometry,
-                                        alternate: routeAnalysis.alternate.geometry,
+                                        direct: { ...routeAnalysis.direct.geometry, steps: routeAnalysis.direct.steps || [] },
+                                        alternate: { ...routeAnalysis.alternate.geometry, steps: routeAnalysis.alternate.steps || [] },
                                         waypoint: routeAnalysis.alternate.waypoint,
                                       }));
                                       window.location.href = '/';

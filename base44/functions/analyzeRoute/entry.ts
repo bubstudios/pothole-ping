@@ -26,14 +26,25 @@ function midpoint(lat1, lng1, lat2, lng2) {
 }
 
 async function getOSRMRoute(lng1, lat1, lng2, lat2) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson&steps=true`;
   const res = await fetch(url);
   const data = await res.json();
   if (!data.routes?.length) return null;
+
+  // Parse steps into simplified format for frontend navigation
+  const steps = (data.routes[0].legs?.[0]?.steps || []).map(s => ({
+    distance: s.distance,
+    duration: s.duration,
+    name: s.name || '',
+    maneuver: s.maneuver ? { type: s.maneuver.type, modifier: s.maneuver.modifier } : null,
+    coordinates: s.geometry?.coordinates?.map(c => [c[1], c[0]]) || [],
+  }));
+
   return {
     distanceMeters: data.routes[0].distance,
     durationSeconds: data.routes[0].duration,
     geometry: data.routes[0].geometry,
+    steps,
   };
 }
 
@@ -172,6 +183,7 @@ Deno.serve(async (req) => {
             durationSeconds: leg1.durationSeconds + leg2.durationSeconds,
             waypoint: { lat: wp.lat, lng: wp.lng },
             geometry: { type: 'LineString', coordinates: detourCoords },
+            steps: [...(leg1.steps || []), ...(leg2.steps || [])],
           });
         }
       }
@@ -192,6 +204,7 @@ Deno.serve(async (req) => {
         distance_miles: Math.round(directRoute.distanceMeters / 1609.34 * 10) / 10,
         duration_minutes: Math.round(directRoute.durationSeconds / 60),
         geometry: directRoute.geometry,
+        steps: directRoute.steps || [],
       },
       potholes: onRoute,
       pothole_count: onRoute.length,
@@ -205,6 +218,7 @@ Deno.serve(async (req) => {
         extra_minutes: Math.round(timeDiff / 60),
         geometry: alternateRoute.geometry,
         waypoint: alternateRoute.waypoint,
+        steps: alternateRoute.steps || [],
         pothole_free: true,
       };
     }
