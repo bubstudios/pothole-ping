@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     // Generate alternate route that avoids potholes
     let alternateRoute = null;
     if (onRoute.length > 0) {
-      // Find the geometric center of all potholes on route
+      // Find the center of potholes and their position along the route
       const potholeCenter = onRoute.reduce(
         (acc, p) => [acc[0] + p.latitude, acc[1] + p.longitude],
         [0, 0]
@@ -91,33 +91,71 @@ Deno.serve(async (req) => {
       potholeCenter[0] /= onRoute.length;
       potholeCenter[1] /= onRoute.length;
 
-      // Find the route midpoint
-      const [midLat, midLng] = midpoint(start_lat, start_lng, end_lat, end_lng);
-
       // Calculate a unit vector perpendicular to the route
       const routeDx = end_lng - start_lng;
       const routeDy = end_lat - start_lat;
       const routeLen = Math.sqrt(routeDx * routeDx + routeDy * routeDy) || 1;
-      const perpX = -routeDy / routeLen; // north/south perpendicular
-      const perpY = routeDx / routeLen;   // east/west perpendicular
+      const perpX = -routeDy / routeLen;
+      const perpY = routeDx / routeLen;
 
-      // Determine which side the potholes are on (dot product)
+      // Go opposite direction from pothole cluster
       const dot = (potholeCenter[1] - start_lat) * perpX + (potholeCenter[0] - start_lng) * perpY;
-      const awayDir = dot > 0 ? -1 : 1; // go opposite direction from pothole cluster
+      const awayDir = dot > 0 ? -1 : 1;
 
-      // Try progressively larger offsets, pick the shortest route that avoids potholes
-      const offsets = [0.06, 0.12, 0.2, 0.35]; // ~0.06-0.35 miles (~300-1800ft)
-      for (const offsetMiles of offsets) {
-        const offsetDeg = (offsetMiles / 69) * awayDir;
-        const waypointLat = midLat + perpX * offsetDeg;
-        const waypointLng = midLng + perpY * offsetDeg;
+      // Interpolate the detour point along the route near the potholes
+      // Find where along the route (0-1) the potholes are clustered
+      const routeVec = [routeDx, routeDy];
+      const potholeVec = [potholeCenter[0] - start_lng, potholeCenter[1] - start_lat];
+      let t = (potholeVec[0] * routeVec[0] + potholeVec[1] * routeVec[1]) / (routeLen * routeLen);
+      t = Math.max(0.15, Math.min(0.85, t));
+      const detourLat = start_lat + routeDy * t;
+      const detourLng = start_lng + routeDx * t;
 
-        const leg1 = await getOSRMRoute(start_lng, start_lat, waypointLng, waypointLat);
-        if (!leg1) continue;
-        const leg2 = await getOSRMRoute(waypointLng, waypointLat, end_lng, end_lat);
-        if (!leg2) continue;
+      // Try offsets at the pothole cluster point AND at midpoint (for comparison)
+      const detourPoints = [
+        { lat: detourLat, lng: detourLng, label: 'near_pothole' },
+      ];
+      const [midLat, midLng] = midpoint(start_lat, start_lng, end_lat, end_lng);
+      if (Math.abs(t - 0.5) > 0.2) {
+        detourPoints.push({ lat: midLat, lng: midLng, label: 'midpoint' });
+      }
 
-        // Verify this detour actually avoids the potholes
+      // Try multiple perpendicular offsets in parallel
+      const offsets = [0.06, 0.12, 0.2, 0.35]; // ~300-1800ft
+      const allWaypoints = detourPoints.flatMap(dp =>
+        offsets.map(om => {
+          const offsetDeg = (om / 69) * awayDir;
+          return {
+            offsetMiles: om,
+            detourPoint: dp.label,
+            lat: dp.lat + perpX * offsetDeg,
+            lng: dp.lng + perpY * offsetDeg,
+          };
+        })
+      );
+
+      // Fetch all OSRM routes in parallel
+      const fetchResults = await Promise.allSettled(
+        allWaypoints.flatMap(wp => [
+          getOSRMRoute(start_lng, start_lat, wp.lng, wp.lat).then(r => ({ result: r, wp, leg: 1 })),
+          getOSRMRoute(wp.lng, wp.lat, end_lng, end_lat).then(r => ({ result: r, wp, leg: 2 })),
+        ])
+      );
+
+      // Group results by waypoint
+      const candidates = [];
+      for (const wp of allWaypoints) {
+        const leg1Data = fetchResults.find(r =>
+          r.status === 'fulfilled' && r.value?.wp?.lat === wp.lat && r.value.leg === 1
+        )?.value;
+        const leg2Data = fetchResults.find(r =>
+          r.status === 'fulfilled' && r.value?.wp?.lat === wp.lat && r.value.leg === 2
+        )?.value;
+        const leg1 = leg1Data?.result;
+        const leg2 = leg2Data?.result;
+        if (!leg1 || !leg2) continue;
+
+        // Check if this detour avoids the potholes
         const detourCoords = [...leg1.geometry.coordinates, ...leg2.geometry.coordinates];
         const stillOnRoute = onRoute.filter((p) => {
           let minD = Infinity;
@@ -129,13 +167,22 @@ Deno.serve(async (req) => {
         });
 
         if (stillOnRoute.length === 0) {
-          alternateRoute = {
+          candidates.push({
             distanceMeters: leg1.distanceMeters + leg2.distanceMeters,
             durationSeconds: leg1.durationSeconds + leg2.durationSeconds,
-            waypoint: { lat: waypointLat, lng: waypointLng },
+            waypoint: { lat: wp.lat, lng: wp.lng },
             geometry: { type: 'LineString', coordinates: detourCoords },
-          };
-          break;
+          });
+        }
+      }
+
+      // Pick the shortest alternate route that's not unreasonably longer
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => a.durationSeconds - b.durationSeconds);
+        const best = candidates[0];
+        const extraMinutes = (best.durationSeconds - directRoute.durationSeconds) / 60;
+        if (extraMinutes <= 5) { // Only suggest if it adds ≤5 minutes
+          alternateRoute = best;
         }
       }
     }

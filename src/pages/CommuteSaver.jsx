@@ -65,8 +65,7 @@ export default function CommuteSaver() {
   const [formError, setFormError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [suggestFor, setSuggestFor] = useState(null); // 'start' or 'end'
-  const [routePaths, setRoutePaths] = useState({}); // { routeId: [[lat,lng],...] }
-  const [loadingRoutePath, setLoadingRoutePath] = useState(null);
+  const [routePaths, setRoutePaths] = useState({}); // { routeId: [[lat,lng],...] } from backend geometry
   const mapRef = useRef();
   const debounceTimers = useRef({ start: null, end: null });
 
@@ -227,71 +226,8 @@ export default function CommuteSaver() {
     setSelectedRoute(route);
     setRouteAnalysis(null);
     setShowAlt(false);
-    
-    // Fetch real road route from OSRM
-    if (!routePaths[route.id]) {
-      setLoadingRoutePath(route.id);
-      try {
-        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${route.start_lng},${route.start_lat};${route.end_lng},${route.end_lat}?overview=full&geometries=geojson`;
-        const res = await fetch(osrmUrl, { headers: { 'User-Agent': 'PotholePing/1.0' } });
-        if (!res.ok) throw new Error(`OSRM returned ${res.status}`);
-        const data = await res.json();
-        if (data.routes?.length) {
-          const pathCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-          setRoutePaths(prev => ({ ...prev, [route.id]: pathCoords }));
-          // Find nearby potholes using the actual road path
-          const nearby = potholes.filter((p) => {
-            const path = pathCoords;
-            let minDist = Infinity;
-            for (let i = 0; i < path.length - 1; i++) {
-              const d = pointToSegmentDist(
-                Number(p.latitude), Number(p.longitude),
-                path[i][0], path[i][1],
-                path[i+1][0], path[i+1][1]
-              );
-              if (d < minDist) minDist = d;
-            }
-            return minDist <= ALERT_RADIUS_FT;
-          });
-          setNearbyPotholes(nearby);
-        }
-      } catch (e) {
-        console.warn('OSRM route fetch failed, using straight-line fallback', e.message);
-        // Fall back to straight-line proximity check
-        const nearby = potholes.filter((p) => {
-          const d = pointToSegmentDist(
-            Number(p.latitude), Number(p.longitude),
-            route.start_lat, route.start_lng,
-            route.end_lat, route.end_lng
-          );
-          return d <= ALERT_RADIUS_FT;
-        });
-        setNearbyPotholes(nearby);
-      }
-      setLoadingRoutePath(null);
-    } else {
-      // Already have the path, just recalculate potholes
-      const path = routePaths[route.id];
-      const nearby = potholes.filter((p) => {
-        let minDist = Infinity;
-        for (let i = 0; i < path.length - 1; i++) {
-          const d = pointToSegmentDist(
-            Number(p.latitude), Number(p.longitude),
-            path[i][0], path[i][1],
-            path[i+1][0], path[i+1][1]
-          );
-          if (d < minDist) minDist = d;
-        }
-        return minDist <= ALERT_RADIUS_FT;
-      });
-      setNearbyPotholes(nearby);
-    }
-  };
-
-  const analyzeRoute = async (route) => {
     setAnalyzing(route.id);
-    setRouteAnalysis(null);
-    setShowAlt(false);
+
     try {
       const res = await base44.functions.invoke('analyzeRoute', {
         start_lat: route.start_lat,
@@ -299,11 +235,30 @@ export default function CommuteSaver() {
         end_lat: route.end_lat,
         end_lng: route.end_lng,
       });
-      setRouteAnalysis(res.data);
+      const data = res.data;
+
+      // Store the road geometry from backend for the mini-map
+      if (data.direct?.geometry?.coordinates) {
+        setRoutePaths(prev => ({ ...prev, [route.id]: data.direct.geometry.coordinates.map(c => [c[1], c[0]]) }));
+      }
+
+      setRouteAnalysis(data);
+      setNearbyPotholes(data.potholes || []);
     } catch (e) {
       console.error('Route analysis failed', e);
+      // Fall back to straight-line proximity
+      const nearby = potholes.filter((p) => {
+        const d = pointToSegmentDist(
+          Number(p.latitude), Number(p.longitude),
+          route.start_lat, route.start_lng,
+          route.end_lat, route.end_lng
+        );
+        return d <= ALERT_RADIUS_FT;
+      });
+      setNearbyPotholes(nearby);
     }
-    setAnalyzing(false);
+
+    setAnalyzing(null);
   };
 
   const totalAlerts = routes.reduce((sum, r) => {
@@ -497,14 +452,9 @@ export default function CommuteSaver() {
 
                     {selectedRoute?.id === r.id && (
                       <div className="border-t p-3 space-y-3">
-                        {loadingRoutePath === r.id && (
+                        {analyzing === r.id && (
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Loader2 className="w-3 h-3 animate-spin" /> Loading road route...
-                          </div>
-                        )}
-                        {!loadingRoutePath && selectedRoute?.id === r.id && !routePaths[r.id] && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <AlertTriangle className="w-3 h-3" /> Showing approximate straight-line route
+                            <Loader2 className="w-3 h-3 animate-spin" /> Analyzing route...
                           </div>
                         )}
                         {/* Mini map */}
@@ -518,16 +468,16 @@ export default function CommuteSaver() {
                             <TileLayer attribution='&copy; OSM' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                             {!showAlt || !routeAnalysis?.alternate ? (
                               <Polyline
-                                positions={routePaths[r.id] || [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]]}
+                                positions={routeAnalysis?.direct?.geometry ? routeAnalysis.direct.geometry.coordinates.map(c => [c[1], c[0]]) : (routePaths[r.id] || [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]])}
                                 color="#f97316"
                                 weight={3}
-                                opacity={routePaths[r.id] ? 1 : 0.6}
-                                dashArray={routePaths[r.id] ? undefined : '8 6'}
+                                opacity={routeAnalysis?.direct?.geometry || routePaths[r.id] ? 1 : 0.6}
+                                dashArray={routeAnalysis?.direct?.geometry || routePaths[r.id] ? undefined : '8 6'}
                               />
                             ) : (
                               <>
                                 <Polyline
-                                  positions={routeAnalysis.direct.geometry ? routeAnalysis.direct.geometry.coordinates.map(c => [c[1], c[0]]) : (routePaths[r.id] || [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]])}
+                                  positions={routeAnalysis.direct.geometry.coordinates.map(c => [c[1], c[0]])}
                                   color="#f97316" weight={2} opacity={0.4} dashArray="8 8"
                                 />
                                 <Polyline positions={routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]])} color="#22c55e" weight={3} />
@@ -549,40 +499,39 @@ export default function CommuteSaver() {
                                   })}
                                 />
                               ))}
-                            <FitBounds positions={showAlt && routeAnalysis?.alternate ? routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]]) : (routePaths[r.id] ? [...routePaths[r.id], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])] : [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])])} />
+                            <FitBounds positions={
+                              showAlt && routeAnalysis?.alternate
+                                ? routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]])
+                                : (routeAnalysis?.direct?.geometry
+                                  ? [...routeAnalysis.direct.geometry.coordinates.map(c => [c[1], c[0]]), ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])]
+                                  : (routePaths[r.id]
+                                    ? [...routePaths[r.id], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])]
+                                    : [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])]))
+                            } />
                           </MapContainer>
                         </div>
 
                         {/* Route summary */}
-                        {!routeAnalysis ? (
-                          <div className="space-y-2">
-                            {nearbyPotholes.length > 0 ? (
-                              <p className="text-sm font-semibold text-red-600 flex items-center gap-1">
-                                <AlertTriangle className="w-4 h-4" /> ~{nearbyPotholes.length} potholes within {ALERT_RADIUS_FT}ft of your route
-                              </p>
-                            ) : (
-                              <p className="text-sm text-green-600 flex items-center gap-1">
-                                <CheckCircle className="w-4 h-4" /> Route appears clear!
-                              </p>
-                            )}
-                            {nearbyPotholes.length > 0 && (
-                              <Button onClick={() => analyzeRoute(r)} disabled={!!analyzing} size="sm" className="w-full gap-2" variant="outline">
-                                {analyzing === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
-                                {analyzing === r.id ? 'Finding alternate route...' : 'Find Pothole-Free Route'}
-                              </Button>
-                            )}
+                        {analyzing === r.id && !routeAnalysis ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mr-2" />
+                            <span className="text-sm text-muted-foreground">Checking for potholes...</span>
                           </div>
-                        ) : (
+                        ) : routeAnalysis ? (
                           <div className="space-y-3">
                             {/* Direct route card */}
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div className={`border rounded-lg p-3 ${routeAnalysis.pothole_count > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold text-red-700">Direct Route</span>
-                                <span className="text-xs text-red-600">{routeAnalysis.direct.distance_miles} mi • {routeAnalysis.direct.duration_minutes} min</span>
+                                <span className={`text-sm font-semibold ${routeAnalysis.pothole_count > 0 ? 'text-red-700' : 'text-green-700'}`}>Direct Route</span>
+                                <span className={`text-xs ${routeAnalysis.pothole_count > 0 ? 'text-red-600' : 'text-green-600'}`}>{routeAnalysis.direct.distance_miles} mi • {routeAnalysis.direct.duration_minutes} min</span>
                               </div>
-                              {routeAnalysis.pothole_count > 0 && (
+                              {routeAnalysis.pothole_count > 0 ? (
                                 <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
                                   <AlertTriangle className="w-3 h-3" /> {routeAnalysis.pothole_count} pothole{routeAnalysis.pothole_count !== 1 ? 's' : ''} along route
+                                </p>
+                              ) : (
+                                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" /> No potholes on this route
                                 </p>
                               )}
                             </div>
@@ -609,15 +558,9 @@ export default function CommuteSaver() {
                                   {showAlt ? 'Show Direct Route' : 'Show on Map'}
                                 </Button>
                               </div>
-                            ) : routeAnalysis.pothole_count === 0 ? (
-                              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                <p className="text-sm text-green-600 flex items-center gap-1">
-                                  <CheckCircle className="w-4 h-4" /> No potholes found on this route!
-                                </p>
-                              </div>
-                            ) : (
+                            ) : routeAnalysis.pothole_count > 0 && (
                               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                                <p className="text-xs text-amber-600">Alternate pothole-free route could not be calculated for this path.</p>
+                                <p className="text-xs text-amber-600">No pothole-free alternate route found along these roads.</p>
                               </div>
                             )}
 
@@ -634,6 +577,10 @@ export default function CommuteSaver() {
                                 ))}
                               </div>
                             )}
+                          </div>
+                        ) : (
+                          <div className="text-center py-3">
+                            <p className="text-xs text-muted-foreground">Unable to analyze route. Check your connection and try again.</p>
                           </div>
                         )}
 
