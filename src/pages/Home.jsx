@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -189,9 +189,17 @@ export default function Home() {
     return 1 + Math.min(karma / 50, 1); // caps at 2x
   };
 
+  const loadingPotholesRef = useRef(false);
+
   const loadPotholes = async () => {
-    const data = await base44.entities.PotholeReport.filter({}, '-created_date', 100);
-    setPotholes(data);
+    if (loadingPotholesRef.current) return;
+    loadingPotholesRef.current = true;
+    try {
+      const data = await base44.entities.PotholeReport.filter({}, '-created_date', 50);
+      setPotholes(data);
+    } finally {
+      loadingPotholesRef.current = false;
+    }
   };
 
   const loadAvoidances = async () => {
