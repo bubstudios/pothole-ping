@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import FollowRoutePosition from '@/components/map/FollowRoutePosition';
 
 const waypointIcon = L.divIcon({
   html: '<div style="width:12px;height:12px;background:#22c55e;border:2px solid white;border-radius:50%;"></div>',
@@ -18,7 +19,7 @@ function FitRouteBounds({ coords }) {
   return null;
 }
 
-export default function CommuterRouteOverlay({ routeData }) {
+export default function CommuterRouteOverlay({ routeData, userPosition, followRoute = false }) {
   if (!routeData) return null;
 
   const directCoords = routeData.direct?.coordinates?.map(c => [c[1], c[0]]) || [];
@@ -35,6 +36,11 @@ export default function CommuterRouteOverlay({ routeData }) {
       )}
       {wp && <Marker position={[wp.lat, wp.lng]} icon={waypointIcon} />}
       <FitRouteBounds coords={altCoords.length > 0 ? altCoords : directCoords} />
+      <FollowRoutePosition
+        coordinates={altCoords.length > 0 ? altCoords : directCoords}
+        userPosition={userPosition}
+        enabled={followRoute && !!userPosition}
+      />
     </>
   );
 }

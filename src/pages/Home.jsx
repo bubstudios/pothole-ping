@@ -677,7 +677,7 @@ export default function Home() {
                 severityFilter={heatmapSeverity}
                 timeRange={heatmapTimeRange}
               />
-              <CommuterRouteOverlay routeData={commuterRouteData} />
+              <CommuterRouteOverlay routeData={commuterRouteData} userPosition={userPosition} followRoute={followUser} />
             </PotholeMap>
             {dangerNearby && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none">
