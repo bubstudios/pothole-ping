@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Route, Plus, Trash2, AlertTriangle, CheckCircle, MapPin, Navigation, Bell, Loader2, Shuffle, Clock } from 'lucide-react';
+import { ArrowLeft, Route, Plus, Trash2, AlertTriangle, CheckCircle, MapPin, Navigation, Bell, Loader2, Shuffle, Clock, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -56,10 +56,11 @@ export default function CommuteSaver() {
   const [adding, setAdding] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [nearbyPotholes, setNearbyPotholes] = useState([]);
-  const [form, setForm] = useState({ name: '', start_lat: '', start_lng: '', start_label: '', end_lat: '', end_lng: '', end_label: '', commute_hour: '' });
+  const [form, setForm] = useState({ name: '', start_address: '', start_lat: '', start_lng: '', start_label: '', end_address: '', end_lat: '', end_lng: '', end_label: '', commute_hour: '' });
   const [useGps, setUseGps] = useState(null);
-  const [analyzing, setAnalyzing] = useState(null); // route id being analyzed
-  const [routeAnalysis, setRouteAnalysis] = useState(null); // { direct, potholes, alternate }
+  const [geocoding, setGeocoding] = useState(null); // 'start' or 'end'
+  const [analyzing, setAnalyzing] = useState(null);
+  const [routeAnalysis, setRouteAnalysis] = useState(null);
   const [showAlt, setShowAlt] = useState(false);
   const mapRef = useRef();
 
@@ -81,6 +82,26 @@ export default function CommuteSaver() {
     setLoading(false);
   };
 
+  const geocodeAddress = async (address, which) => {
+    if (!address.trim()) return;
+    setGeocoding(which);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=en`);
+      const data = await res.json();
+      if (data.length) {
+        setForm((f) => ({
+          ...f,
+          [which === 'start' ? 'start_lat' : 'end_lat']: parseFloat(data[0].lat).toFixed(6),
+          [which === 'start' ? 'start_lng' : 'end_lng']: parseFloat(data[0].lon).toFixed(6),
+          [which === 'start' ? 'start_label' : 'end_label']: data[0].display_name,
+        }));
+      }
+    } catch (e) {
+      console.error('Geocoding failed', e);
+    }
+    setGeocoding(null);
+  };
+
   const getLocation = () => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) { resolve(null); return; }
@@ -99,6 +120,7 @@ export default function CommuteSaver() {
     if (loc) {
       setForm((f) => ({
         ...f,
+        [which === 'start' ? 'start_address' : 'end_address']: '📍 Current Location',
         [which === 'start' ? 'start_lat' : 'end_lat']: loc.lat.toFixed(6),
         [which === 'start' ? 'start_lng' : 'end_lng']: loc.lng.toFixed(6),
         [which === 'start' ? 'start_label' : 'end_label']: '📍 Current Location',
@@ -123,7 +145,7 @@ export default function CommuteSaver() {
       end_label: form.end_label,
       commute_hour: form.commute_hour ? parseInt(form.commute_hour) : undefined,
     });
-    setForm({ name: '', start_lat: '', start_lng: '', start_label: '', end_lat: '', end_lng: '', end_label: '', commute_hour: '' });
+    setForm({ name: '', start_address: '', start_lat: '', start_lng: '', start_label: '', end_address: '', end_lat: '', end_lng: '', end_label: '', commute_hour: '' });
     setAdding(false);
     loadData();
   };
@@ -232,25 +254,47 @@ export default function CommuteSaver() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">Start</p>
-                  <Input placeholder="Label" value={form.start_label} onChange={(e) => setForm({ ...form, start_label: e.target.value })} />
-                  <Input placeholder="Latitude" value={form.start_lat} onChange={(e) => setForm({ ...form, start_lat: e.target.value })} type="number" step="any" />
-                  <Input placeholder="Longitude" value={form.start_lng} onChange={(e) => setForm({ ...form, start_lng: e.target.value })} type="number" step="any" />
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="Address or intersection"
+                      value={form.start_address}
+                      onChange={(e) => setForm({ ...form, start_address: e.target.value })}
+                      onBlur={() => geocodeAddress(form.start_address, 'start')}
+                      className="pl-8 text-sm"
+                    />
+                  </div>
+                  {form.start_lat && (
+                    <p className="text-[10px] text-muted-foreground truncate">📍 {form.start_label ? form.start_label.substring(0, 60) : `${form.start_lat}, ${form.start_lng}`}</p>
+                  )}
                   <button onClick={() => handleUseGps('start')} disabled={!!useGps} className="text-xs text-primary hover:underline flex items-center gap-1">
-                    <Navigation className="w-3 h-3" /> {useGps === 'start' ? 'Getting...' : 'Use my location'}
+                    <Navigation className="w-3 h-3" /> {useGps === 'start' ? 'Getting location...' : 'Use my current location'}
                   </button>
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">End</p>
-                  <Input placeholder="Label" value={form.end_label} onChange={(e) => setForm({ ...form, end_label: e.target.value })} />
-                  <Input placeholder="Latitude" value={form.end_lat} onChange={(e) => setForm({ ...form, end_lat: e.target.value })} type="number" step="any" />
-                  <Input placeholder="Longitude" value={form.end_lng} onChange={(e) => setForm({ ...form, end_lng: e.target.value })} type="number" step="any" />
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="Address or intersection"
+                      value={form.end_address}
+                      onChange={(e) => setForm({ ...form, end_address: e.target.value })}
+                      onBlur={() => geocodeAddress(form.end_address, 'end')}
+                      className="pl-8 text-sm"
+                    />
+                  </div>
+                  {form.end_lat && (
+                    <p className="text-[10px] text-muted-foreground truncate">📍 {form.end_label ? form.end_label.substring(0, 60) : `${form.end_lat}, ${form.end_lng}`}</p>
+                  )}
                   <button onClick={() => handleUseGps('end')} disabled={!!useGps} className="text-xs text-primary hover:underline flex items-center gap-1">
-                    <Navigation className="w-3 h-3" /> {useGps === 'end' ? 'Getting...' : 'Use my location'}
+                    <Navigation className="w-3 h-3" /> {useGps === 'end' ? 'Getting location...' : 'Use my current location'}
                   </button>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleAdd} size="sm" className="flex-1">Save Route</Button>
+                <Button onClick={handleAdd} size="sm" className="flex-1" disabled={!!geocoding}>
+                  {geocoding ? <>Geocoding <Loader2 className="w-3 h-3 animate-spin ml-1" /></> : 'Save Route'}
+                </Button>
                 <Button onClick={() => setAdding(false)} variant="outline" size="sm">Cancel</Button>
               </div>
             </div>
@@ -304,9 +348,9 @@ export default function CommuteSaver() {
                       </div>
                       <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
                         <MapPin className="w-3 h-3" />
-                        {r.start_label || `${r.start_lat?.toFixed(4)}, ${r.start_lng?.toFixed(4)}`}
+                        <span className="truncate max-w-[40%]">{r.start_label === '📍 Current Location' ? 'Current Location' : r.start_label || `${r.start_lat?.toFixed(4)}, ${r.start_lng?.toFixed(4)}`}</span>
                         <span>→</span>
-                        {r.end_label || `${r.end_lat?.toFixed(4)}, ${r.end_lng?.toFixed(4)}`}
+                        <span className="truncate max-w-[40%]">{r.end_label === '📍 Current Location' ? 'Current Location' : r.end_label || `${r.end_lat?.toFixed(4)}, ${r.end_lng?.toFixed(4)}`}</span>
                       </div>
                     </button>
 
