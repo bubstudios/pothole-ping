@@ -74,7 +74,7 @@ function PostCard({ post, onNewComment }) {
 
   const loadComments = useCallback(async () => {
     setLoadingComments(true);
-    const res = await base44.entities.WatchZoneComment.filter({ post_id: post.id }, 'created_date', 100);
+    const res = await base44.entities.WatchZoneComment.filter({ post_id: post.id }, 'created_date', 50);
     setComments(res);
     setLoadingComments(false);
   }, [post.id]);
@@ -176,11 +176,11 @@ export default function WatchZones() {
   const [loading, setLoading] = useState(true);
 
   const loadSubscriptions = useCallback(async () => {
-    const subs = await base44.entities.UserWatchZone.list();
+    const subs = await base44.entities.UserWatchZone.filter({}, '-created_date', 50);
     const ids = new Set(subs.map(s => s.watch_zone_id));
     setSubscriptionIds(ids);
     if (ids.size > 0) {
-      const allZones = await base44.entities.WatchZone.list();
+      const allZones = await base44.entities.WatchZone.filter({}, '-created_date', 100);
       setSubscribedZones(allZones.filter(z => ids.has(z.id)));
     } else {
       setSubscribedZones([]);
@@ -191,9 +191,13 @@ export default function WatchZones() {
   const loadPosts = useCallback(async () => {
     if (subscriptionIds.size === 0) return;
     const allPosts = [];
-    for (const zoneId of subscriptionIds) {
-      const zonePosts = await base44.entities.WatchZonePost.filter({ watch_zone_id: zoneId }, '-created_date', 50);
-      allPosts.push(...zonePosts);
+    const zoneIdsArray = Array.from(subscriptionIds);
+    for (let i = 0; i < zoneIdsArray.length; i += 2) {
+      const batch = zoneIdsArray.slice(i, i + 2).map(zoneId =>
+        base44.entities.WatchZonePost.filter({ watch_zone_id: zoneId }, '-created_date', 30)
+      );
+      const results = await Promise.all(batch);
+      results.forEach(zonePosts => allPosts.push(...zonePosts));
     }
     allPosts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     setPosts(allPosts);
