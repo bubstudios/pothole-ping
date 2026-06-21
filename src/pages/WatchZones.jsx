@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -174,45 +174,51 @@ export default function WatchZones() {
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', text: '', type: 'discussion', zoneId: '' });
   const [loading, setLoading] = useState(true);
+  const loadingRef = useRef(false);
+  const lastLoadRef = useRef(0);
 
-  const loadSubscriptions = useCallback(async () => {
-    const subs = await base44.entities.UserWatchZone.filter({}, '-created_date', 50);
-    const ids = new Set(subs.map(s => s.watch_zone_id));
-    setSubscriptionIds(ids);
-    if (ids.size > 0) {
-      const allZones = await base44.entities.WatchZone.filter({}, '-created_date', 100);
-      setSubscribedZones(allZones.filter(z => ids.has(z.id)));
-    } else {
-      setSubscribedZones([]);
-      setPosts([]);
+  const loadAll = useCallback(async () => {
+    const now = Date.now();
+    if (loadingRef.current || now - lastLoadRef.current < 1500) return;
+    loadingRef.current = true;
+    lastLoadRef.current = now;
+    try {
+      const subs = await base44.entities.UserWatchZone.filter({}, '-created_date', 50);
+      const ids = new Set(subs.map(s => s.watch_zone_id));
+      setSubscriptionIds(ids);
+      if (ids.size > 0) {
+        const zoneIdsArray = Array.from(ids);
+        const allZones = [];
+        // Load zones in batches to avoid rate limits
+        for (let i = 0; i < zoneIdsArray.length; i += 10) {
+          const batch = zoneIdsArray.slice(i, i + 10);
+          const results = await base44.entities.WatchZone.filter({ id: batch }, '-created_date', 50);
+          allZones.push(...results);
+        }
+        setSubscribedZones(allZones);
+        // Load posts sequentially per zone
+        const allPosts = [];
+        for (let i = 0; i < zoneIdsArray.length; i++) {
+          const zonePosts = await base44.entities.WatchZonePost.filter({ watch_zone_id: zoneIdsArray[i] }, '-created_date', 20);
+          allPosts.push(...zonePosts);
+        }
+        allPosts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+        setPosts(allPosts);
+      } else {
+        setSubscribedZones([]);
+        setPosts([]);
+      }
+    } finally {
+      loadingRef.current = false;
     }
   }, []);
 
-  const loadPosts = useCallback(async () => {
-    if (subscriptionIds.size === 0) return;
-    const allPosts = [];
-    const zoneIdsArray = Array.from(subscriptionIds);
-    for (let i = 0; i < zoneIdsArray.length; i += 2) {
-      const batch = zoneIdsArray.slice(i, i + 2).map(zoneId =>
-        base44.entities.WatchZonePost.filter({ watch_zone_id: zoneId }, '-created_date', 30)
-      );
-      const results = await Promise.all(batch);
-      results.forEach(zonePosts => allPosts.push(...zonePosts));
-    }
-    allPosts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    setPosts(allPosts);
-  }, [subscriptionIds]);
-
   useEffect(() => {
-    loadSubscriptions().then(() => setLoading(false));
+    loadAll().then(() => setLoading(false));
     const handler = () => window.scrollTo({ top: 0, behavior: 'smooth' });
     window.addEventListener('potholeping-scroll-reset', handler);
     return () => window.removeEventListener('potholeping-scroll-reset', handler);
-  }, [loadSubscriptions]);
-
-  useEffect(() => {
-    loadPosts();
-  }, [loadPosts]);
+  }, [loadAll]);
 
   const searchZones = async () => {
     if (!zipSearch.trim()) return;
@@ -241,7 +247,7 @@ export default function WatchZones() {
     } else {
       await base44.entities.UserWatchZone.create({ watch_zone_id: zoneId });
     }
-    await loadSubscriptions();
+    await loadAll();
   };
 
   const handleCreatePost = async () => {
@@ -255,7 +261,7 @@ export default function WatchZones() {
     });
     setNewPost({ title: '', text: '', type: 'discussion', zoneId: '' });
     setShowNewPost(false);
-    loadPosts();
+    loadAll();
   };
 
   const handleNewComment = async (postId, text, parentId) => {
