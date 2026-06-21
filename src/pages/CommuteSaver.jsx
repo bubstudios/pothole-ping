@@ -62,7 +62,11 @@ export default function CommuteSaver() {
   const [analyzing, setAnalyzing] = useState(null);
   const [routeAnalysis, setRouteAnalysis] = useState(null);
   const [showAlt, setShowAlt] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestFor, setSuggestFor] = useState(null); // 'start' or 'end'
   const mapRef = useRef();
+  const debounceTimers = useRef({ start: null, end: null });
 
   useEffect(() => {
     loadData();
@@ -82,24 +86,59 @@ export default function CommuteSaver() {
     setLoading(false);
   };
 
-  const geocodeAddress = async (address, which) => {
-    if (!address.trim()) return;
+  const geocodeAddress = async (address, which, showSuggestions = false) => {
+    if (!address.trim()) {
+      if (showSuggestions) { setSuggestions([]); setSuggestFor(null); }
+      return;
+    }
     setGeocoding(which);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=en`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=${showSuggestions ? 5 : 1}&accept-language=en`);
       const data = await res.json();
       if (data.length) {
-        setForm((f) => ({
-          ...f,
-          [which === 'start' ? 'start_lat' : 'end_lat']: parseFloat(data[0].lat).toFixed(6),
-          [which === 'start' ? 'start_lng' : 'end_lng']: parseFloat(data[0].lon).toFixed(6),
-          [which === 'start' ? 'start_label' : 'end_label']: data[0].display_name,
-        }));
+        if (showSuggestions) {
+          setSuggestions(data);
+          setSuggestFor(which);
+        } else {
+          setSuggestions([]);
+          setSuggestFor(null);
+          setForm((f) => ({
+            ...f,
+            [which === 'start' ? 'start_lat' : 'end_lat']: parseFloat(data[0].lat).toFixed(6),
+            [which === 'start' ? 'start_lng' : 'end_lng']: parseFloat(data[0].lon).toFixed(6),
+            [`${which}_label`]: data[0].display_name,
+          }));
+        }
       }
     } catch (e) {
       console.error('Geocoding failed', e);
     }
     setGeocoding(null);
+  };
+
+  const debouncedSuggest = (address, which) => {
+    if (debounceTimers.current[which]) clearTimeout(debounceTimers.current[which]);
+    if (!address.trim() || address.trim().length < 2) {
+      setSuggestions([]);
+      setSuggestFor(null);
+      return;
+    }
+    debounceTimers.current[which] = setTimeout(() => {
+      geocodeAddress(address, which, true);
+    }, 600);
+  };
+
+  const selectSuggestion = (suggestion, which) => {
+    setForm((f) => ({
+      ...f,
+      [`${which}_address`]: suggestion.display_name,
+      [`${which}_lat`]: parseFloat(suggestion.lat).toFixed(6),
+      [`${which}_lng`]: parseFloat(suggestion.lon).toFixed(6),
+      [`${which}_label`]: suggestion.display_name,
+    }));
+    setSuggestions([]);
+    setSuggestFor(null);
+    setFormError('');
   };
 
   const getLocation = () => {
@@ -133,7 +172,20 @@ export default function CommuteSaver() {
     const slng = parseFloat(form.start_lng);
     const elat = parseFloat(form.end_lat);
     const elng = parseFloat(form.end_lng);
-    if (!form.name || isNaN(slat) || isNaN(slng) || isNaN(elat) || isNaN(elng)) return;
+    
+    if (!form.name) {
+      setFormError('Please enter a route name');
+      return;
+    }
+    if (!form.start_address || isNaN(slat) || isNaN(slng)) {
+      setFormError('Please enter and select a valid start address');
+      return;
+    }
+    if (!form.end_address || isNaN(elat) || isNaN(elng)) {
+      setFormError('Please enter and select a valid end address');
+      return;
+    }
+    setFormError('');
 
     await base44.entities.UserRoute.create({
       name: form.name,
@@ -259,10 +311,21 @@ export default function CommuteSaver() {
                     <Input
                       placeholder="Address or intersection"
                       value={form.start_address}
-                      onChange={(e) => setForm({ ...form, start_address: e.target.value })}
-                      onBlur={() => geocodeAddress(form.start_address, 'start')}
+                      onChange={(e) => { setForm({ ...form, start_address: e.target.value, start_lat: '', start_lng: '', start_label: '' }); debouncedSuggest(e.target.value, 'start'); }}
+                      onBlur={() => { if (!form.start_lat) geocodeAddress(form.start_address, 'start'); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') geocodeAddress(form.start_address, 'start'); }}
                       className="pl-8 text-sm"
                     />
+                    {geocoding === 'start' && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+                    {suggestFor === 'start' && suggestions.length > 0 && (
+                      <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-card border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        {suggestions.map((s, i) => (
+                          <button key={i} onClick={() => selectSuggestion(s, 'start')} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors border-b last:border-b-0">
+                            {s.display_name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {form.start_lat && (
                     <p className="text-[10px] text-muted-foreground truncate">📍 {form.start_label ? form.start_label.substring(0, 60) : `${form.start_lat}, ${form.start_lng}`}</p>
@@ -278,10 +341,21 @@ export default function CommuteSaver() {
                     <Input
                       placeholder="Address or intersection"
                       value={form.end_address}
-                      onChange={(e) => setForm({ ...form, end_address: e.target.value })}
-                      onBlur={() => geocodeAddress(form.end_address, 'end')}
+                      onChange={(e) => { setForm({ ...form, end_address: e.target.value, end_lat: '', end_lng: '', end_label: '' }); debouncedSuggest(e.target.value, 'end'); }}
+                      onBlur={() => { if (!form.end_lat) geocodeAddress(form.end_address, 'end'); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') geocodeAddress(form.end_address, 'end'); }}
                       className="pl-8 text-sm"
                     />
+                    {geocoding === 'end' && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+                    {suggestFor === 'end' && suggestions.length > 0 && (
+                      <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-card border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        {suggestions.map((s, i) => (
+                          <button key={i} onClick={() => selectSuggestion(s, 'end')} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors border-b last:border-b-0">
+                            {s.display_name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {form.end_lat && (
                     <p className="text-[10px] text-muted-foreground truncate">📍 {form.end_label ? form.end_label.substring(0, 60) : `${form.end_lat}, ${form.end_lng}`}</p>
@@ -291,11 +365,14 @@ export default function CommuteSaver() {
                   </button>
                 </div>
               </div>
+              {formError && (
+                <p className="text-xs text-red-500 font-medium">{formError}</p>
+              )}
               <div className="flex gap-2">
                 <Button onClick={handleAdd} size="sm" className="flex-1" disabled={!!geocoding}>
                   {geocoding ? <>Geocoding <Loader2 className="w-3 h-3 animate-spin ml-1" /></> : 'Save Route'}
                 </Button>
-                <Button onClick={() => setAdding(false)} variant="outline" size="sm">Cancel</Button>
+                <Button onClick={() => { setAdding(false); setFormError(''); }} variant="outline" size="sm">Cancel</Button>
               </div>
             </div>
           )}
