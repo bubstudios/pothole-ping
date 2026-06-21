@@ -26,6 +26,12 @@
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "commute_hour": {
+      "type": "number",
+      "description": "Hour of day (0-23) for pre-trip alerts, e.g. 8 for 8am",
+      "minimum": 0,
+      "maximum": 23
     }
   },
   "required": [

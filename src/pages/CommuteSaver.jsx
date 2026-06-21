@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Route, Plus, Trash2, AlertTriangle, CheckCircle, MapPin, Navigation, Bell } from 'lucide-react';
+import { ArrowLeft, Route, Plus, Trash2, AlertTriangle, CheckCircle, MapPin, Navigation, Bell, Loader2, Shuffle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -56,8 +56,11 @@ export default function CommuteSaver() {
   const [adding, setAdding] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [nearbyPotholes, setNearbyPotholes] = useState([]);
-  const [form, setForm] = useState({ name: '', start_lat: '', start_lng: '', start_label: '', end_lat: '', end_lng: '', end_label: '' });
-  const [useGps, setUseGps] = useState(null); // 'start' or 'end'
+  const [form, setForm] = useState({ name: '', start_lat: '', start_lng: '', start_label: '', end_lat: '', end_lng: '', end_label: '', commute_hour: '' });
+  const [useGps, setUseGps] = useState(null);
+  const [analyzing, setAnalyzing] = useState(null); // route id being analyzed
+  const [routeAnalysis, setRouteAnalysis] = useState(null); // { direct, potholes, alternate }
+  const [showAlt, setShowAlt] = useState(false);
   const mapRef = useRef();
 
   useEffect(() => {
@@ -118,8 +121,9 @@ export default function CommuteSaver() {
       end_lat: elat,
       end_lng: elng,
       end_label: form.end_label,
+      commute_hour: form.commute_hour ? parseInt(form.commute_hour) : undefined,
     });
-    setForm({ name: '', start_lat: '', start_lng: '', start_label: '', end_lat: '', end_lng: '', end_label: '' });
+    setForm({ name: '', start_lat: '', start_lng: '', start_label: '', end_lat: '', end_lng: '', end_label: '', commute_hour: '' });
     setAdding(false);
     loadData();
   };
@@ -142,6 +146,26 @@ export default function CommuteSaver() {
       return d <= ALERT_RADIUS_FT;
     });
     setNearbyPotholes(nearby);
+    setRouteAnalysis(null);
+    setShowAlt(false);
+  };
+
+  const analyzeRoute = async (route) => {
+    setAnalyzing(route.id);
+    setRouteAnalysis(null);
+    setShowAlt(false);
+    try {
+      const res = await base44.functions.invoke('analyzeRoute', {
+        start_lat: route.start_lat,
+        start_lng: route.start_lng,
+        end_lat: route.end_lat,
+        end_lng: route.end_lng,
+      });
+      setRouteAnalysis(res.data);
+    } catch (e) {
+      console.error('Route analysis failed', e);
+    }
+    setAnalyzing(false);
   };
 
   const totalAlerts = routes.reduce((sum, r) => {
@@ -192,6 +216,19 @@ export default function CommuteSaver() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <select
+                  value={form.commute_hour}
+                  onChange={(e) => setForm({ ...form, commute_hour: e.target.value })}
+                  className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                >
+                  <option value="">No pre-trip alert</option>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>{String(i % 12 || 12) + ':00 ' + (i < 12 ? 'AM' : 'PM')}</option>
+                  ))}
+                </select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">Start</p>
@@ -284,10 +321,18 @@ export default function CommuteSaver() {
                             zoomControl={false}
                           >
                             <TileLayer attribution='&copy; OSM' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <Polyline positions={[[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]]} color="#f97316" weight={3} />
+                            {!showAlt || !routeAnalysis?.alternate ? (
+                              <Polyline positions={[[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]]} color="#f97316" weight={3} />
+                            ) : (
+                              <>
+                                <Polyline positions={[[r.start_lat, r.start_lng], [r.end_lat, r.end_lng]]} color="#f97316" weight={2} opacity={0.4} dashArray="8 8" />
+                                <Polyline positions={routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]])} color="#22c55e" weight={3} />
+                                <Marker position={[routeAnalysis.alternate.waypoint.lat, routeAnalysis.alternate.waypoint.lng]} icon={L.divIcon({ html: '<div style="width:14px;height:14px;background:#22c55e;border:2px solid white;border-radius:50%;"></div>', iconSize: [14, 14], iconAnchor: [7, 7] })} />
+                              </>
+                            )}
                             <Marker position={[r.start_lat, r.start_lng]} icon={L.divIcon({ html: '<div style="width:12px;height:12px;background:#22c55e;border:2px solid white;border-radius:50%;"></div>', iconSize: [12, 12], iconAnchor: [6, 6] })} />
                             <Marker position={[r.end_lat, r.end_lng]} icon={L.divIcon({ html: '<div style="width:12px;height:12px;background:#ef4444;border:2px solid white;border-radius:50%;"></div>', iconSize: [12, 12], iconAnchor: [6, 6] })} />
-                            {nearbyPotholes
+                            {(routeAnalysis?.potholes || nearbyPotholes)
                               .filter((p) => !isNaN(p.latitude) && !isNaN(p.longitude))
                               .map((p) => (
                                 <Marker
@@ -300,28 +345,101 @@ export default function CommuteSaver() {
                                   })}
                                 />
                               ))}
-                            <FitBounds positions={[[r.start_lat, r.start_lng], [r.end_lat, r.end_lng], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])]} />
+                            <FitBounds positions={showAlt && routeAnalysis?.alternate ? routeAnalysis.alternate.geometry.coordinates.map(c => [c[1], c[0]]) : [[r.start_lat, r.start_lng], [r.end_lat, r.end_lng], ...nearbyPotholes.map((p) => [Number(p.latitude), Number(p.longitude)])]} />
                           </MapContainer>
                         </div>
 
-                        {nearbyPotholes.length > 0 ? (
+                        {/* Route summary */}
+                        {!routeAnalysis ? (
                           <div className="space-y-2">
-                            <p className="text-sm font-semibold text-red-600 flex items-center gap-1">
-                              <AlertTriangle className="w-4 h-4" /> {nearbyPotholes.length} potholes on your route
-                            </p>
-                            {nearbyPotholes.map((p) => (
-                              <Link key={p.id} to={`/pothole/${p.id}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors border">
-                                <Badge className={`capitalize text-[10px] ${severityBadge[p.severity] || ''}`}>{p.severity}</Badge>
-                                <span className="text-xs flex-1 truncate">{p.address || 'Unknown'}</span>
-                                <span className="text-xs text-muted-foreground">{Math.round(pointToSegmentDist(Number(p.latitude), Number(p.longitude), r.start_lat, r.start_lng, r.end_lat, r.end_lng))}ft</span>
-                              </Link>
-                            ))}
+                            {nearbyPotholes.length > 0 ? (
+                              <p className="text-sm font-semibold text-red-600 flex items-center gap-1">
+                                <AlertTriangle className="w-4 h-4" /> ~{nearbyPotholes.length} potholes within {ALERT_RADIUS_FT}ft of your route
+                              </p>
+                            ) : (
+                              <p className="text-sm text-green-600 flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4" /> Route appears clear!
+                              </p>
+                            )}
+                            {nearbyPotholes.length > 0 && (
+                              <Button onClick={() => analyzeRoute(r)} disabled={!!analyzing} size="sm" className="w-full gap-2" variant="outline">
+                                {analyzing === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
+                                {analyzing === r.id ? 'Finding alternate route...' : 'Find Pothole-Free Route'}
+                              </Button>
+                            )}
                           </div>
                         ) : (
-                          <p className="text-sm text-green-600 flex items-center gap-1">
-                            <CheckCircle className="w-4 h-4" /> Route is clear!
-                          </p>
+                          <div className="space-y-3">
+                            {/* Direct route card */}
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-red-700">Direct Route</span>
+                                <span className="text-xs text-red-600">{routeAnalysis.direct.distance_miles} mi • {routeAnalysis.direct.duration_minutes} min</span>
+                              </div>
+                              {routeAnalysis.pothole_count > 0 && (
+                                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> {routeAnalysis.pothole_count} pothole{routeAnalysis.pothole_count !== 1 ? 's' : ''} along route
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Alternate route card */}
+                            {routeAnalysis.alternate ? (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-semibold text-green-700 flex items-center gap-1">
+                                    <Shuffle className="w-3.5 h-3.5" /> Pothole-Free Route
+                                  </span>
+                                  <span className="text-xs text-green-600">{routeAnalysis.alternate.distance_miles} mi • {routeAnalysis.alternate.duration_minutes} min</span>
+                                </div>
+                                <p className="text-xs text-green-600 mt-1">
+                                  Only {routeAnalysis.alternate.extra_minutes} extra minute{routeAnalysis.alternate.extra_minutes !== 1 ? 's' : ''} — zero reported potholes
+                                </p>
+                                <Button
+                                  onClick={() => setShowAlt(!showAlt)}
+                                  size="sm"
+                                  variant={showAlt ? 'outline' : 'default'}
+                                  className="mt-2 w-full gap-1 text-xs"
+                                >
+                                  <Shuffle className="w-3 h-3" />
+                                  {showAlt ? 'Show Direct Route' : 'Show on Map'}
+                                </Button>
+                              </div>
+                            ) : routeAnalysis.pothole_count === 0 ? (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                <p className="text-sm text-green-600 flex items-center gap-1">
+                                  <CheckCircle className="w-4 h-4" /> No potholes found on this route!
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                <p className="text-xs text-amber-600">Alternate pothole-free route could not be calculated for this path.</p>
+                              </div>
+                            )}
+
+                            {/* Pothole list */}
+                            {routeAnalysis.potholes?.length > 0 && (
+                              <div className="space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground">Potholes on route:</p>
+                                {routeAnalysis.potholes.map((p) => (
+                                  <Link key={p.id} to={`/pothole/${p.id}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors border">
+                                    <Badge className={`capitalize text-[10px] ${severityBadge[p.severity] || ''}`}>{p.severity}</Badge>
+                                    <span className="text-xs flex-1 truncate">{p.address || 'Unknown'}</span>
+                                    <span className="text-xs text-muted-foreground">{p.distance_ft}ft</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         )}
+
+                        <div className="flex gap-2">
+                          {r.commute_hour != null && (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <Clock className="w-3 h-3" /> Alert at {String(r.commute_hour % 12 || 12)}:00 {r.commute_hour < 12 ? 'AM' : 'PM'}
+                            </Badge>
+                          )}
+                        </div>
 
                         <Button onClick={() => handleDelete(r.id)} variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50">
                           <Trash2 className="w-4 h-4 mr-1" /> Delete Route
