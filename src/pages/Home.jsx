@@ -192,10 +192,13 @@ export default function Home() {
   };
 
   const loadingPotholesRef = useRef(false);
+  const lastPotholeLoadRef = useRef(0);
 
   const loadPotholes = async () => {
-    if (loadingPotholesRef.current) return;
+    const now = Date.now();
+    if (loadingPotholesRef.current || now - lastPotholeLoadRef.current < 2000) return;
     loadingPotholesRef.current = true;
+    lastPotholeLoadRef.current = now;
     try {
       const data = await base44.entities.PotholeReport.filter({}, '-created_date', 50);
       setPotholes(data);
