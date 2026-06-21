@@ -21,7 +21,7 @@ export default function AnalyticsDashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const data = await base44.entities.PotholeReport.list('-created_date', 500);
+    const data = await base44.entities.PotholeReport.filter({}, '-created_date', 100);
     setPotholes(data);
     setLoading(false);
   };

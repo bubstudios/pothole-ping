@@ -177,14 +177,14 @@ export default function Home() {
   };
 
   const loadPotholes = async () => {
-    const data = await base44.entities.PotholeReport.list('-created_date', 200);
+    const data = await base44.entities.PotholeReport.filter({}, '-created_date', 100);
     setPotholes(data);
   };
 
   const loadAvoidances = async () => {
     try {
       if (!currentUser) return;
-      const data = await base44.entities.PotholeAvoidance.filter({ created_by_id: currentUser.id }, '-created_date', 500);
+      const data = await base44.entities.PotholeAvoidance.filter({ created_by_id: currentUser.id }, '-created_date', 100);
       const total = data.reduce((sum, a) => sum + (Number(a.estimated_savings) || 0), 0);
       setTotalSavings(total);
       setAvoidanceCount(data.length);

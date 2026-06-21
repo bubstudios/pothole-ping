@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const potholes = await base44.asServiceRole.entities.PotholeReport.filter(
       { status: { $in: ['reported', 'acknowledged', 'in_progress'] } },
       '-created_date',
-      500
+      200
     );
 
     // Group routes by user (created_by_id)

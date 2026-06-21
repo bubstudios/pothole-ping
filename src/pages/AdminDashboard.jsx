@@ -73,7 +73,7 @@ export default function AdminDashboard() {
     setLoading(true);
     const [u, r, s, d] = await Promise.all([
       base44.entities.User.list(),
-      base44.entities.PotholeReport.list('-created_date', 200),
+      base44.entities.PotholeReport.filter({}, '-created_date', 100),
       base44.entities.SponsoredBusiness.list(),
       base44.entities.Donation.list('-created_date', 100),
     ]);

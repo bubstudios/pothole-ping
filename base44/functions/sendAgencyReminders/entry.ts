@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
     const reports = await base44.asServiceRole.entities.PotholeReport.filter(
       { status: { $in: ['reported', 'acknowledged', 'in_progress'] } },
       '-created_date',
-      500
+      200
     );
 
     const now = new Date();

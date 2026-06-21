@@ -39,7 +39,7 @@ export default function HallOfShame() {
   }, []);
 
   const loadData = async () => {
-    const data = await base44.entities.PotholeReport.list('-created_date', 200);
+    const data = await base44.entities.PotholeReport.filter({}, '-created_date', 100);
     const unfixed = data.filter((p) => p.status !== 'fixed');
     unfixed.sort((a, b) => calcShameScore(b) - calcShameScore(a));
     setPotholes(unfixed.slice(0, 20));

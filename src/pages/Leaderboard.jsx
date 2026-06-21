@@ -38,11 +38,11 @@ export default function Leaderboard() {
   const loadData = async () => {
     setLoading(true);
     const [reports, comments, users, reps, donations] = await Promise.all([
-      base44.entities.PotholeReport.list('-created_date', 500),
-      base44.entities.PotholeComment.list('-created_date', 500),
+      base44.entities.PotholeReport.filter({}, '-created_date', 150),
+      base44.entities.PotholeComment.filter({}, '-created_date', 150),
       base44.entities.User.list(),
       base44.entities.UserReputation.list(),
-      base44.entities.Donation.filter({ status: 'completed' }, '-created_date', 500),
+      base44.entities.Donation.filter({ status: 'completed' }, '-created_date', 150),
     ]);
 
     // Build karma map

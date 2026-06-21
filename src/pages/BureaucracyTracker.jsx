@@ -41,7 +41,7 @@ export default function BureaucracyTracker() {
   }, []);
 
   const loadData = async () => {
-    const data = await base44.entities.PotholeReport.list('-created_date', 300);
+    const data = await base44.entities.PotholeReport.filter({}, '-created_date', 100);
     setPotholes(data);
 
     // Aggregate jurisdiction stats
