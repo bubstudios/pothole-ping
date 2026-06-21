@@ -109,12 +109,7 @@ Deno.serve(async (req) => {
       const perpX = -routeDy / routeLen;
       const perpY = routeDx / routeLen;
 
-      // Go opposite direction from pothole cluster
-      const dot = (potholeCenter[1] - start_lat) * perpX + (potholeCenter[0] - start_lng) * perpY;
-      const awayDir = dot > 0 ? -1 : 1;
-
       // Interpolate the detour point along the route near the potholes
-      // Find where along the route (0-1) the potholes are clustered
       const routeVec = [routeDx, routeDy];
       const potholeVec = [potholeCenter[0] - start_lng, potholeCenter[1] - start_lat];
       let t = (potholeVec[0] * routeVec[0] + potholeVec[1] * routeVec[1]) / (routeLen * routeLen);
@@ -122,7 +117,7 @@ Deno.serve(async (req) => {
       const detourLat = start_lat + routeDy * t;
       const detourLng = start_lng + routeDx * t;
 
-      // Try offsets at the pothole cluster point AND at midpoint (for comparison)
+      // Try offsets at the pothole cluster point AND at midpoint
       const detourPoints = [
         { lat: detourLat, lng: detourLng, label: 'near_pothole' },
       ];
@@ -131,18 +126,20 @@ Deno.serve(async (req) => {
         detourPoints.push({ lat: midLat, lng: midLng, label: 'midpoint' });
       }
 
-      // Try multiple perpendicular offsets in parallel
-      const offsets = [0.06, 0.12, 0.2, 0.35]; // ~300-1800ft
+      // Try multiple perpendicular offsets in BOTH directions
+      const offsets = [0.12, 0.25, 0.5]; // ~600-2600ft
       const allWaypoints = detourPoints.flatMap(dp =>
-        offsets.map(om => {
-          const offsetDeg = (om / 69) * awayDir;
-          return {
-            offsetMiles: om,
-            detourPoint: dp.label,
-            lat: dp.lat + perpX * offsetDeg,
-            lng: dp.lng + perpY * offsetDeg,
-          };
-        })
+        offsets.flatMap(om =>
+          [-1, 1].map(dir => {
+            const offsetDeg = (om / 69) * dir;
+            return {
+              offsetMiles: om,
+              detourPoint: dp.label,
+              lat: dp.lat + perpX * offsetDeg,
+              lng: dp.lng + perpY * offsetDeg,
+            };
+          })
+        )
       );
 
       // Fetch all OSRM routes in parallel
@@ -188,14 +185,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Pick the shortest alternate route that's not unreasonably longer
+      // Pick the shortest pothole-free alternate route
       if (candidates.length > 0) {
         candidates.sort((a, b) => a.durationSeconds - b.durationSeconds);
-        const best = candidates[0];
-        const extraMinutes = (best.durationSeconds - directRoute.durationSeconds) / 60;
-        if (extraMinutes <= 5) { // Only suggest if it adds ≤5 minutes
-          alternateRoute = best;
-        }
+        alternateRoute = candidates[0];
       }
     }
 
