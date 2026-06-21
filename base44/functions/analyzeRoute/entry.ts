@@ -94,35 +94,48 @@ Deno.serve(async (req) => {
       // Find the route midpoint
       const [midLat, midLng] = midpoint(start_lat, start_lng, end_lat, end_lng);
 
-      // Calculate a waypoint perpendicular to the route, opposite side from pothole cluster
+      // Calculate a unit vector perpendicular to the route
       const routeDx = end_lng - start_lng;
       const routeDy = end_lat - start_lat;
       const routeLen = Math.sqrt(routeDx * routeDx + routeDy * routeDy) || 1;
-      const perpX = -routeDy / routeLen;
-      const perpY = routeDx / routeLen;
+      const perpX = -routeDy / routeLen; // north/south perpendicular
+      const perpY = routeDx / routeLen;   // east/west perpendicular
 
-      // Determine which side the potholes are on
+      // Determine which side the potholes are on (dot product)
       const dot = (potholeCenter[1] - start_lat) * perpX + (potholeCenter[0] - start_lng) * perpY;
-      const side = dot > 0 ? 1 : -1;
+      const awayDir = dot > 0 ? -1 : 1; // go opposite direction from pothole cluster
 
-      // Place waypoint ~0.5 miles away perpendicular, opposite side from potholes
-      const offsetDeg = (0.5 / 69) * side;
-      const waypointLat = start_lat + routeDy / routeLen * (midLat - start_lat) * 2 + perpX * (-offsetDeg);
-      const waypointLng = start_lng + routeDx / routeLen * (midLng - start_lng) * 2 + perpY * (-offsetDeg);
+      // Try progressively larger offsets, pick the shortest route that avoids potholes
+      const offsets = [0.06, 0.12, 0.2, 0.35]; // ~0.06-0.35 miles (~300-1800ft)
+      for (const offsetMiles of offsets) {
+        const offsetDeg = (offsetMiles / 69) * awayDir;
+        const waypointLat = midLat + perpX * offsetDeg;
+        const waypointLng = midLng + perpY * offsetDeg;
 
-      const altRoute = await getOSRMRoute(start_lng, start_lat, waypointLng, waypointLat);
-      if (altRoute) {
-        const altRoute2 = await getOSRMRoute(waypointLng, waypointLat, end_lng, end_lat);
-        if (altRoute2) {
+        const leg1 = await getOSRMRoute(start_lng, start_lat, waypointLng, waypointLat);
+        if (!leg1) continue;
+        const leg2 = await getOSRMRoute(waypointLng, waypointLat, end_lng, end_lat);
+        if (!leg2) continue;
+
+        // Verify this detour actually avoids the potholes
+        const detourCoords = [...leg1.geometry.coordinates, ...leg2.geometry.coordinates];
+        const stillOnRoute = onRoute.filter((p) => {
+          let minD = Infinity;
+          for (let i = 0; i < detourCoords.length - 1; i++) {
+            const d = pointToSegmentDistFt(p.latitude, p.longitude, detourCoords[i][1], detourCoords[i][0], detourCoords[i + 1][1], detourCoords[i + 1][0]);
+            if (d < minD) minD = d;
+          }
+          return minD <= ALERT_RADIUS_FT;
+        });
+
+        if (stillOnRoute.length === 0) {
           alternateRoute = {
-            distanceMeters: altRoute.distanceMeters + altRoute2.distanceMeters,
-            durationSeconds: altRoute.durationSeconds + altRoute2.durationSeconds,
+            distanceMeters: leg1.distanceMeters + leg2.distanceMeters,
+            durationSeconds: leg1.durationSeconds + leg2.durationSeconds,
             waypoint: { lat: waypointLat, lng: waypointLng },
-            geometry: {
-              type: 'LineString',
-              coordinates: [...altRoute.geometry.coordinates, ...altRoute2.geometry.coordinates],
-            },
+            geometry: { type: 'LineString', coordinates: detourCoords },
           };
+          break;
         }
       }
     }
