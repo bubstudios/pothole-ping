@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import FollowRoutePosition from '@/components/map/FollowRoutePosition';
@@ -11,8 +11,10 @@ const waypointIcon = L.divIcon({
 
 function FitRouteBounds({ coords }) {
   const map = useMap();
+  const didFit = useRef(false);
   useEffect(() => {
-    if (coords.length) {
+    if (coords.length && !didFit.current) {
+      didFit.current = true;
       map.fitBounds(L.latLngBounds(coords), { padding: [60, 60] });
     }
   }, [map, coords]);
@@ -20,10 +22,17 @@ function FitRouteBounds({ coords }) {
 }
 
 export default function CommuterRouteOverlay({ routeData, userPosition, followRoute = false }) {
+  const directCoords = useMemo(
+    () => routeData?.direct?.coordinates?.map(c => [c[1], c[0]]) || [],
+    [routeData?.direct?.coordinates]
+  );
+  const altCoords = useMemo(
+    () => routeData?.alternate?.coordinates?.map(c => [c[1], c[0]]) || [],
+    [routeData?.alternate?.coordinates]
+  );
+
   if (!routeData) return null;
 
-  const directCoords = routeData.direct?.coordinates?.map(c => [c[1], c[0]]) || [];
-  const altCoords = routeData.alternate?.coordinates?.map(c => [c[1], c[0]]) || [];
   const wp = routeData.waypoint;
 
   return (
