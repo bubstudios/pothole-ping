@@ -234,6 +234,7 @@ export default function CommuteSaver() {
       try {
         const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${route.start_lng},${route.start_lat};${route.end_lng},${route.end_lat}?overview=full&geometries=geojson`;
         const res = await fetch(osrmUrl, { headers: { 'User-Agent': 'PotholePing/1.0' } });
+        if (!res.ok) throw new Error(`OSRM returned ${res.status}`);
         const data = await res.json();
         if (data.routes?.length) {
           const pathCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
@@ -255,7 +256,17 @@ export default function CommuteSaver() {
           setNearbyPotholes(nearby);
         }
       } catch (e) {
-        console.error('OSRM route fetch failed', e);
+        console.warn('OSRM route fetch failed, using straight-line fallback', e.message);
+        // Fall back to straight-line proximity check
+        const nearby = potholes.filter((p) => {
+          const d = pointToSegmentDist(
+            Number(p.latitude), Number(p.longitude),
+            route.start_lat, route.start_lng,
+            route.end_lat, route.end_lng
+          );
+          return d <= ALERT_RADIUS_FT;
+        });
+        setNearbyPotholes(nearby);
       }
       setLoadingRoutePath(null);
     } else {
@@ -489,6 +500,11 @@ export default function CommuteSaver() {
                         {loadingRoutePath === r.id && (
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Loader2 className="w-3 h-3 animate-spin" /> Loading road route...
+                          </div>
+                        )}
+                        {!loadingRoutePath && selectedRoute?.id === r.id && !routePaths[r.id] && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <AlertTriangle className="w-3 h-3" /> Showing approximate straight-line route
                           </div>
                         )}
                         {/* Mini map */}
