@@ -548,15 +548,32 @@ export default function CommuteSaver() {
                                 <p className="text-xs text-green-600 mt-1">
                                   Only {routeAnalysis.alternate.extra_minutes} extra minute{routeAnalysis.alternate.extra_minutes !== 1 ? 's' : ''} — zero reported potholes
                                 </p>
-                                <Button
-                                  onClick={() => setShowAlt(!showAlt)}
-                                  size="sm"
-                                  variant={showAlt ? 'outline' : 'default'}
-                                  className="mt-2 w-full gap-1 text-xs"
-                                >
-                                  <Shuffle className="w-3 h-3" />
-                                  {showAlt ? 'Show Direct Route' : 'Show on Map'}
-                                </Button>
+                                <div className="flex gap-2 mt-2">
+                                  <Button
+                                    onClick={() => {
+                                      sessionStorage.setItem('potholeping_commuter_route', JSON.stringify({
+                                        direct: routeAnalysis.direct.geometry,
+                                        alternate: routeAnalysis.alternate.geometry,
+                                        waypoint: routeAnalysis.alternate.waypoint,
+                                      }));
+                                      window.location.href = '/';
+                                    }}
+                                    size="sm"
+                                    variant="default"
+                                    className="flex-1 gap-1 text-xs"
+                                  >
+                                    <Shuffle className="w-3 h-3" />
+                                    Show on Map
+                                  </Button>
+                                  <Button
+                                    onClick={() => setShowAlt(!showAlt)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 gap-1 text-xs"
+                                  >
+                                    {showAlt ? 'Direct' : 'Preview'}
+                                  </Button>
+                                </div>
                               </div>
                             ) : routeAnalysis.pothole_count > 0 && (
                               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">

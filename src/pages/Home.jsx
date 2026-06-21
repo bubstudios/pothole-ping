@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import PotholeMap from '@/components/map/PotholeMap';
 import HeatmapLayer from '@/components/map/HeatmapLayer';
+import CommuterRouteOverlay from '@/components/map/CommuterRouteOverlay';
 import HeatmapControls from '@/components/map/HeatmapControls';
 import ReportForm from '@/components/pothole/ReportForm';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
@@ -113,6 +114,7 @@ export default function Home() {
   const [avoidanceCount, setAvoidanceCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [followUser, setFollowUser] = useState(true);
+  const [commuterRouteData, setCommuterRouteData] = useState(null);
   const [pendingVoicePins, setPendingVoicePins] = useState(() => {
     try {
       const saved = localStorage.getItem('potholeping_voice_pins');
@@ -147,6 +149,17 @@ export default function Home() {
   useEffect(() => {
     if (currentUser) loadAvoidances();
   }, [currentUser]);
+
+  // Pick up commuter route from sessionStorage (set by Commute Saver's "Show on Map")
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('potholeping_commuter_route');
+      if (raw) {
+        setCommuterRouteData(JSON.parse(raw));
+        sessionStorage.removeItem('potholeping_commuter_route');
+      }
+    } catch {}
+  }, []);
 
   const loadCurrentUser = async () => {
     try {
@@ -664,6 +677,7 @@ export default function Home() {
                 severityFilter={heatmapSeverity}
                 timeRange={heatmapTimeRange}
               />
+              <CommuterRouteOverlay routeData={commuterRouteData} />
             </PotholeMap>
             {dangerNearby && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none">
@@ -696,7 +710,15 @@ export default function Home() {
                 return age <= timeCutoffs[heatmapTimeRange];
               }).length : 0}
             />}
-            {!sidebarOpen && (
+            {!sidebarOpen && commuterRouteData && (
+              <button
+                onClick={() => setCommuterRouteData(null)}
+                className="absolute top-4 left-4 z-[1000] px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg bg-green-600 text-white border-green-500 transition-all"
+              >
+                🛣️ Clear Route
+              </button>
+            )}
+            {!sidebarOpen && !commuterRouteData && (
               <button
                 onClick={() => setHotZonesEnabled(!hotZonesEnabled)}
                 className={`absolute top-4 left-4 z-[1000] px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg transition-all ${
