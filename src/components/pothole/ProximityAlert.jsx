@@ -53,6 +53,8 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
         const loc = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
+          heading: pos.coords.heading,
+          speed: pos.coords.speed,
         };
         setUserLocation(loc);
         onLocationChange?.(loc);
