@@ -489,9 +489,9 @@ export default function CommuteSaver() {
                       </div>
                       <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
                         <MapPin className="w-3 h-3" />
-                        <span className="truncate max-w-[40%]">{r.start_label === '📍 Current Location' ? 'Current Location' : r.start_label || `${r.start_lat?.toFixed(4)}, ${r.start_lng?.toFixed(4)}`}</span>
+                        <span className="truncate max-w-[40%]">{r.start_label === '📍 Current Location' ? 'Current Location' : (r.start_label && r.start_label !== 'null' ? r.start_label : '📍 Start')}</span>
                         <span>→</span>
-                        <span className="truncate max-w-[40%]">{r.end_label === '📍 Current Location' ? 'Current Location' : r.end_label || `${r.end_lat?.toFixed(4)}, ${r.end_lng?.toFixed(4)}`}</span>
+                        <span className="truncate max-w-[40%]">{r.end_label === '📍 Current Location' ? 'Current Location' : (r.end_label && r.end_label !== 'null' ? r.end_label : '📍 End')}</span>
                       </div>
                     </button>
 
