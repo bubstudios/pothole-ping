@@ -100,7 +100,10 @@ export default function CommuteSaver() {
     }
     setGeocoding(which);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=${showSuggestions ? 5 : 1}&accept-language=en`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=${showSuggestions ? 5 : 1}&accept-language=en`, {
+        headers: { 'User-Agent': 'PotholePing/1.0 (commute-saver)' },
+      });
+      if (!res.ok) throw new Error(`Nominatim returned ${res.status}`);
       const data = await res.json();
       if (data.length) {
         if (showSuggestions) {
@@ -116,9 +119,12 @@ export default function CommuteSaver() {
             [`${which}_label`]: data[0].display_name,
           }));
         }
+      } else if (!showSuggestions) {
+        setFormError(`Could not find: "${address}"`);
       }
     } catch (e) {
       console.error('Geocoding failed', e);
+      if (!showSuggestions) setFormError('Address lookup failed. Please try again.');
     }
     setGeocoding(null);
   };
@@ -132,7 +138,7 @@ export default function CommuteSaver() {
     }
     debounceTimers.current[which] = setTimeout(() => {
       geocodeAddress(address, which, true);
-    }, 600);
+    }, 800);
   };
 
   const selectSuggestion = (suggestion, which) => {
