@@ -103,6 +103,13 @@ export default function Home() {
   const [showFixed, setShowFixed] = useState(false);
   const [listSortBy, setListSortBy] = useState('newest');
   const [listSeverityFilter, setListSeverityFilter] = useState('all');
+  const [mapStatusFilters, setMapStatusFilters] = useState({
+    reported: true,
+    acknowledged: true,
+    in_progress: true,
+    fixed: false,
+    disputed: false,
+  });
   const [isVoiceListening, setIsVoiceListening] = useState(true);
   const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
   const [userPosition, setUserPosition] = useState(null);
@@ -482,6 +489,7 @@ export default function Home() {
     setSidebarOpen(false);
   };
 
+  const mapFilteredPotholes = potholes.filter((p) => mapStatusFilters[p.status]);
   const displayPotholes = potholes.filter((p) => showFixed || p.status !== 'fixed');
   const filteredPotholes = displayPotholes.filter((p) => {
     // Search filter
@@ -688,7 +696,7 @@ export default function Home() {
         {view === 'map' && (
           <div className="flex-1 relative">
             <PotholeMap
-              potholes={displayPotholes}
+              potholes={mapFilteredPotholes}
               onMapClick={handleMapClick}
               newPin={newPin}
               isDropping={isDropping}
@@ -767,6 +775,22 @@ export default function Home() {
               >
                 {hotZonesEnabled ? '🔥 Hot Zones ON' : '🔥 Hot Zones'}
               </button>
+            )}
+            {!sidebarOpen && (
+              <div className="absolute top-20 left-4 z-[1000] bg-card border rounded-lg shadow-lg p-3 space-y-2">
+                <p className="text-xs font-heading font-semibold text-muted-foreground mb-2">Status</p>
+                {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
+                  <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={mapStatusFilters[status]}
+                      onChange={(e) => setMapStatusFilters(prev => ({ ...prev, [status]: e.target.checked }))}
+                      className="w-4 h-4 rounded border"
+                    />
+                    <span className="capitalize">{status.replace('_', ' ')}</span>
+                  </label>
+                ))}
+              </div>
             )}
           </div>
         )}
