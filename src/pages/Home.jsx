@@ -110,6 +110,12 @@ export default function Home() {
     fixed: false,
     disputed: false,
   });
+  const [mapSeverityFilters, setMapSeverityFilters] = useState({
+    minor: true,
+    moderate: true,
+    severe: true,
+    dangerous: true,
+  });
   const [isVoiceListening, setIsVoiceListening] = useState(true);
   const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
   const [userPosition, setUserPosition] = useState(null);
@@ -489,7 +495,7 @@ export default function Home() {
     setSidebarOpen(false);
   };
 
-  const mapFilteredPotholes = potholes.filter((p) => mapStatusFilters[p.status]);
+  const mapFilteredPotholes = potholes.filter((p) => mapStatusFilters[p.status] && mapSeverityFilters[p.severity]);
   const displayPotholes = potholes.filter((p) => showFixed || p.status !== 'fixed');
   const filteredPotholes = displayPotholes.filter((p) => {
     // Search filter
@@ -777,19 +783,35 @@ export default function Home() {
               </button>
             )}
             {!sidebarOpen && (
-              <div className="absolute top-20 left-4 z-[1000] bg-card border rounded-lg shadow-lg p-3 space-y-2">
-                <p className="text-xs font-heading font-semibold text-muted-foreground mb-2">Status</p>
-                {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
-                  <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={mapStatusFilters[status]}
-                      onChange={(e) => setMapStatusFilters(prev => ({ ...prev, [status]: e.target.checked }))}
-                      className="w-4 h-4 rounded border"
-                    />
-                    <span className="capitalize">{status.replace('_', ' ')}</span>
-                  </label>
-                ))}
+              <div className="absolute top-20 left-4 z-[1000] bg-card border rounded-lg shadow-lg p-3 space-y-3 max-w-xs">
+                <div>
+                  <p className="text-xs font-heading font-semibold text-muted-foreground mb-2">Status</p>
+                  {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
+                    <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={mapStatusFilters[status]}
+                        onChange={(e) => setMapStatusFilters(prev => ({ ...prev, [status]: e.target.checked }))}
+                        className="w-4 h-4 rounded border"
+                      />
+                      <span className="capitalize">{status.replace('_', ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="border-t pt-2">
+                  <p className="text-xs font-heading font-semibold text-muted-foreground mb-2">Severity</p>
+                  {['minor', 'moderate', 'severe', 'dangerous'].map((severity) => (
+                    <label key={severity} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={mapSeverityFilters[severity]}
+                        onChange={(e) => setMapSeverityFilters(prev => ({ ...prev, [severity]: e.target.checked }))}
+                        className="w-4 h-4 rounded border"
+                      />
+                      <span className="capitalize">{severity}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
           </div>
