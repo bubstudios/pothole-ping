@@ -89,6 +89,9 @@ async function lookupJurisdiction(lat, lng, address) {
 export default function Home() {
   const navigate = useNavigate();
   const [potholes, setPotholes] = useState([]);
+  const [potholeOffset, setPotholeOffset] = useState(0);
+  const [hasMorePotholes, setHasMorePotholes] = useState(true);
+  const [loadingMorePotholes, setLoadingMorePotholes] = useState(false);
   const [isDropping, setIsDropping] = useState(false);
   const [newPin, setNewPin] = useState(null);
   const [jurisdictionInfo, setJurisdictionInfo] = useState(null);
@@ -127,7 +130,10 @@ export default function Home() {
   }, [pendingVoicePins]);
 
   useEffect(() => {
-    loadPotholes();
+    setPotholes([]);
+    setPotholeOffset(0);
+    setHasMorePotholes(true);
+    loadPotholes(0);
     loadCurrentUser();
     // Real-time subscription to keep map in sync with detail page updates
     const unsub = base44.entities.PotholeReport.subscribe((event) => {
@@ -192,16 +198,26 @@ export default function Home() {
   const loadingPotholesRef = useRef(false);
   const lastPotholeLoadRef = useRef(0);
 
-  const loadPotholes = async () => {
-    const now = Date.now();
-    if (loadingPotholesRef.current || now - lastPotholeLoadRef.current < 5000) return;
+  const loadPotholes = async (offset = 0) => {
+    if (offset === 0) {
+      const now = Date.now();
+      if (loadingPotholesRef.current || now - lastPotholeLoadRef.current < 5000) return;
+    }
     loadingPotholesRef.current = true;
-    lastPotholeLoadRef.current = now;
     try {
-      const data = await base44.entities.PotholeReport.filter({}, '-created_date', 30);
-      setPotholes(data);
+      const data = await base44.entities.PotholeReport.filter({}, '-created_date', 30, offset);
+      if (offset === 0) {
+        setPotholes(data);
+        setHasMorePotholes(data.length === 30);
+      } else {
+        setPotholes(prev => [...prev, ...data]);
+        setHasMorePotholes(data.length === 30);
+      }
+      setPotholeOffset(offset + 30);
     } finally {
       loadingPotholesRef.current = false;
+      if (offset === 0) lastPotholeLoadRef.current = Date.now();
+      setLoadingMorePotholes(false);
     }
   };
 
@@ -759,7 +775,7 @@ export default function Home() {
                 />
               </div>
             </div>
-            <PullToRefresh onRefresh={loadPotholes} className="flex-1 overflow-y-auto">
+            <PullToRefresh onRefresh={() => loadPotholes(0)} className="flex-1 overflow-y-auto">
               <div className="p-3 space-y-2 pb-14 sm:pb-0">
                 {filteredPotholes.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
@@ -767,9 +783,23 @@ export default function Home() {
                     <p className="text-sm">No potholes found</p>
                   </div>
                 ) : (
-                  filteredPotholes.map((p) => (
-                    <PotholeListItem key={p.id} pothole={p} onClick={handlePotholeClick} />
-                  ))
+                  <>
+                    {filteredPotholes.map((p) => (
+                      <PotholeListItem key={p.id} pothole={p} onClick={handlePotholeClick} />
+                    ))}
+                    {hasMorePotholes && (
+                      <button
+                        onClick={() => {
+                          setLoadingMorePotholes(true);
+                          loadPotholes(potholeOffset);
+                        }}
+                        disabled={loadingMorePotholes}
+                        className="w-full py-3 mt-2 text-sm font-medium text-primary hover:bg-muted rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {loadingMorePotholes ? 'Loading...' : 'Load More'}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </PullToRefresh>
