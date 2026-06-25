@@ -16,6 +16,7 @@ import PotholeDetailPage from '@/pages/PotholeDetailPage';
 import PublicMap from '@/pages/PublicMap';
 import Donate from '@/pages/Donate';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
+import OneSignalInit from '@/components/OneSignalInit';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -57,6 +58,7 @@ function App() {
         <Router>
           <AuthenticatedApp />
         </Router>
+        <OneSignalInit />
         <PwaInstallPrompt />
         <Toaster />
       </QueryClientProvider>
