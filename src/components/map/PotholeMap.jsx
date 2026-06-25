@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MarkerClusterGroup } from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import HotZoneLayer from '@/components/map/HotZoneLayer';
 
 const severityColors = {
@@ -176,26 +179,28 @@ export default function PotholeMap({
         {flyToCenter && <FlyToLocation center={flyToCenter} />}
         <FollowUserPosition position={userPosition} enabled={followUser} />
 
-        {potholes.filter(p => !isNaN(p.latitude) && !isNaN(p.longitude)).map((p) => (
-          <Marker
-            key={p.id}
-            position={[Number(p.latitude), Number(p.longitude)]}
-            icon={createPotholeIcon(p.severity)}
-            eventHandlers={{ click: () => onPotholeClick?.(p) }}
-          >
-            <Popup>
-              <div className="text-sm min-w-[180px]">
-                <p className="font-semibold">{p.address || 'Unknown location'}</p>
-                <p className="text-xs text-gray-500 capitalize mt-1">
-                  {p.severity} · {p.status}
-                </p>
-                {p.jurisdiction_name && (
-                  <p className="text-xs mt-1">📞 {p.jurisdiction_name}</p>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        <MarkerClusterGroup chunkedLoading>
+          {potholes.filter(p => !isNaN(p.latitude) && !isNaN(p.longitude)).map((p) => (
+            <Marker
+              key={p.id}
+              position={[Number(p.latitude), Number(p.longitude)]}
+              icon={createPotholeIcon(p.severity)}
+              eventHandlers={{ click: () => onPotholeClick?.(p) }}
+            >
+              <Popup>
+                <div className="text-sm min-w-[180px]">
+                  <p className="font-semibold">{p.address || 'Unknown location'}</p>
+                  <p className="text-xs text-gray-500 capitalize mt-1">
+                    {p.severity} · {p.status}
+                  </p>
+                  {p.jurisdiction_name && (
+                    <p className="text-xs mt-1">📞 {p.jurisdiction_name}</p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
 
         {newPin && (
           <Marker
