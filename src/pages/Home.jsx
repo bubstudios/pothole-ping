@@ -101,6 +101,8 @@ export default function Home() {
   const [flyToCenter, setFlyToCenter] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFixed, setShowFixed] = useState(false);
+  const [listSortBy, setListSortBy] = useState('newest');
+  const [listSeverityFilter, setListSeverityFilter] = useState('all');
   const [isVoiceListening, setIsVoiceListening] = useState(true);
   const [proximityAlertsOn, setProximityAlertsOn] = useState(false);
   const [userPosition, setUserPosition] = useState(null);
@@ -482,13 +484,20 @@ export default function Home() {
 
   const displayPotholes = potholes.filter((p) => showFixed || p.status !== 'fixed');
   const filteredPotholes = displayPotholes.filter((p) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      p.address?.toLowerCase().includes(q) ||
-      p.jurisdiction_name?.toLowerCase().includes(q) ||
-      p.description?.toLowerCase().includes(q)
-    );
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = p.address?.toLowerCase().includes(q) || p.jurisdiction_name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+    }
+    // Severity filter
+    if (listSeverityFilter !== 'all' && p.severity !== listSeverityFilter) return false;
+    return true;
+  }).sort((a, b) => {
+    if (listSortBy === 'newest') return new Date(b.created_date) - new Date(a.created_date);
+    if (listSortBy === 'oldest') return new Date(a.created_date) - new Date(b.created_date);
+    if (listSortBy === 'most_confirmed') return (Number(b.upvotes) || 0) - (Number(a.upvotes) || 0);
+    return 0;
   });
 
   return (
@@ -764,7 +773,7 @@ export default function Home() {
 
         {view === 'list' && (
           <div className="flex-1 flex flex-col">
-            <div className="p-3 border-b">
+            <div className="p-3 border-b space-y-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -773,6 +782,20 @@ export default function Home() {
                   placeholder="Search by address, city, or description..."
                   className="pl-9"
                 />
+              </div>
+              <div className="flex gap-2 text-xs">
+                <select value={listSortBy} onChange={(e) => setListSortBy(e.target.value)} className="flex-1 px-3 py-1.5 border rounded-md bg-background text-foreground">
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="most_confirmed">Most Confirmed</option>
+                </select>
+                <select value={listSeverityFilter} onChange={(e) => setListSeverityFilter(e.target.value)} className="flex-1 px-3 py-1.5 border rounded-md bg-background text-foreground">
+                  <option value="all">All Severities</option>
+                  <option value="minor">Minor</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="severe">Severe</option>
+                  <option value="dangerous">Dangerous</option>
+                </select>
               </div>
             </div>
             <PullToRefresh onRefresh={() => loadPotholes(0)} className="flex-1 overflow-y-auto">
