@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Circle, Tooltip } from 'react-leaflet';
 
 // Grid-based clustering: each cell is ~500ft (~0.002°)
@@ -29,24 +29,28 @@ export default function HotZoneLayer({ potholes, enabled }) {
 
   if (!enabled || hotZones.length === 0) return null;
 
-  return hotZones.map((zone, i) => (
-    <Circle
-      key={`hz-${i}`}
-      center={[zone.lat, zone.lng]}
-      radius={300} // ~600ft diameter
-      pathOptions={{
-        color: '#dc2626',
-        fillColor: '#dc2626',
-        fillOpacity: 0.25,
-        weight: 2,
-        dashArray: '6 4',
-      }}
-    >
-      <Tooltip direction="center" permanent className="hot-zone-tooltip">
-        <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg">
-          🔥 {zone.count} potholes
-        </div>
-      </Tooltip>
-    </Circle>
-  ));
+  return (
+    <>
+      {hotZones.map((zone, i) => (
+        <Circle
+          key={`hz-${i}`}
+          center={[zone.lat, zone.lng]}
+          radius={300}
+          pathOptions={{
+            color: '#dc2626',
+            fillColor: '#dc2626',
+            fillOpacity: 0.25,
+            weight: 2,
+            dashArray: '6 4',
+          }}
+        >
+          <Tooltip direction="center" permanent className="hot-zone-tooltip">
+            <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg">
+              🔥 {zone.count} potholes
+            </div>
+          </Tooltip>
+        </Circle>
+      ))}
+    </>
+  );
 }
