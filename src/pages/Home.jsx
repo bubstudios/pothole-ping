@@ -784,6 +784,12 @@ export default function Home() {
             )}
             {!sidebarOpen && (
               <div className="absolute top-20 left-4 z-[1000] bg-card border rounded-lg shadow-lg p-3 space-y-3 max-w-xs">
+                <div className="flex items-center justify-between pb-2 border-b">
+                  <p className="text-xs font-heading font-bold text-foreground">Filters</p>
+                  <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                    {mapFilteredPotholes.length}
+                  </span>
+                </div>
                 <div>
                   <p className="text-xs font-heading font-semibold text-muted-foreground mb-2">Status</p>
                   {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
