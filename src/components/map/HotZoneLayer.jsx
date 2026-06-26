@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Fragment } from 'react';
 import { Circle, Tooltip } from 'react-leaflet';
 
 // Grid-based clustering: each cell is ~500ft (~0.002°)
@@ -29,7 +30,9 @@ export default function HotZoneLayer({ potholes, enabled }) {
 
   if (!enabled || hotZones.length === 0) return null;
 
-  return hotZones.map((zone, i) => (
+  return (
+    <Fragment>
+      {hotZones.map((zone, i) => (
     <Circle
       key={`hz-${i}`}
       center={[zone.lat, zone.lng]}
@@ -48,5 +51,7 @@ export default function HotZoneLayer({ potholes, enabled }) {
         </div>
       </Tooltip>
     </Circle>
-  ));
+      ))}
+    </Fragment>
+  );
 }
