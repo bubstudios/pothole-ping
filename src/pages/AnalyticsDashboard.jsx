@@ -21,8 +21,12 @@ export default function AnalyticsDashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const data = await base44.entities.PotholeReport.filter({}, '-created_date', 100);
-    setPotholes(data);
+    try {
+      const data = await base44.entities.PotholeReport.filter({}, '-created_date', 100);
+      setPotholes(data);
+    } catch (err) {
+      console.error('Failed to load analytics:', err);
+    }
     setLoading(false);
   };
 
