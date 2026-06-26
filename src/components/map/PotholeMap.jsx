@@ -245,8 +245,8 @@ export default function PotholeMap({
           />
         )}
         <HotZoneLayer potholes={potholes} enabled={hotZonesEnabled} />
+        {children}
       </MapContainer>
-      {children}
 
       {/* Follow-me toggle */}
       {!sidebarOpen && userPosition && onToggleFollow && (
