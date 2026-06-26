@@ -1,10 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { Fragment, useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { MarkerClusterGroup } from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import HotZoneLayer from '@/components/map/HotZoneLayer';
 
 const severityColors = {
@@ -179,7 +176,7 @@ export default function PotholeMap({
         {flyToCenter && <FlyToLocation center={flyToCenter} />}
         <FollowUserPosition position={userPosition} enabled={followUser} />
 
-        <MarkerClusterGroup chunkedLoading>
+        <Fragment>
           {potholes.filter(p => !isNaN(p.latitude) && !isNaN(p.longitude)).map((p) => (
             <Marker
               key={p.id}
@@ -200,7 +197,7 @@ export default function PotholeMap({
               </Popup>
             </Marker>
           ))}
-        </MarkerClusterGroup>
+        </Fragment>
 
         {newPin && (
           <Marker
