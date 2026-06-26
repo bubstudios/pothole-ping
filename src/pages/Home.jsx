@@ -12,6 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import PotholeMap from '@/components/map/PotholeMap';
 import HeatmapLayer from '@/components/map/HeatmapLayer';
 import CommuterRouteOverlay from '@/components/map/CommuterRouteOverlay';
@@ -702,6 +704,7 @@ export default function Home() {
       <div className="flex-1 flex relative overflow-hidden">
         {view === 'map' && (
           <div className="flex-1 relative">
+            <ErrorBoundary label="Map" onRetry={() => loadPotholes(0)}>
             <PotholeMap
               potholes={mapFilteredPotholes}
               onMapClick={handleMapClick}
@@ -732,6 +735,7 @@ export default function Home() {
               />
               <CommuterRouteOverlay routeData={commuterRouteData} userPosition={userPosition} followRoute={followUser} />
             </PotholeMap>
+            </ErrorBoundary>
             {dangerNearby && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none">
                 <div className="bg-red-600/90 text-white rounded-2xl px-5 py-3 shadow-2xl animate-pulse flex items-center gap-3 backdrop-blur">
@@ -784,42 +788,50 @@ export default function Home() {
               </button>
             )}
             {!sidebarOpen && (
-              <div className="absolute top-20 left-4 z-[1000] bg-card border rounded-lg shadow-lg p-3 space-y-3 max-w-xs">
-                <div className="flex items-center justify-between pb-2 border-b">
-                  <p className="text-xs font-heading font-bold text-foreground">Filters</p>
-                  <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                    {mapFilteredPotholes.length}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs font-heading font-semibold text-muted-foreground mb-2">Status</p>
-                  {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
-                    <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={mapStatusFilters[status]}
-                        onChange={(e) => setMapStatusFilters(prev => ({ ...prev, [status]: e.target.checked }))}
-                        className="w-4 h-4 rounded border"
-                      />
-                      <span className="capitalize">{status.replace('_', ' ')}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="border-t pt-2">
-                  <p className="text-xs font-heading font-semibold text-muted-foreground mb-2">Severity</p>
-                  {['minor', 'moderate', 'severe', 'dangerous'].map((severity) => (
-                    <label key={severity} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={mapSeverityFilters[severity]}
-                        onChange={(e) => setMapSeverityFilters(prev => ({ ...prev, [severity]: e.target.checked }))}
-                        className="w-4 h-4 rounded border"
-                      />
-                      <span className="capitalize">{severity}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="absolute top-4 right-4 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg bg-card text-foreground border-border hover:bg-muted transition-colors">
+                    <span className="capitalize">Filters</span>
+                    <span className="text-[10px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      {mapFilteredPotholes.length}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 space-y-3" align="end" sideOffset={8}>
+                  <div>
+                    <p className="text-xs font-heading font-semibold text-muted-foreground mb-1.5">Status</p>
+                    <div className="space-y-0.5">
+                      {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
+                        <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={mapStatusFilters[status]}
+                            onChange={(e) => setMapStatusFilters(prev => ({ ...prev, [status]: e.target.checked }))}
+                            className="w-4 h-4 rounded border"
+                          />
+                          <span className="capitalize">{status.replace('_', ' ')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t pt-2">
+                    <p className="text-xs font-heading font-semibold text-muted-foreground mb-1.5">Severity</p>
+                    <div className="space-y-0.5">
+                      {['minor', 'moderate', 'severe', 'dangerous'].map((severity) => (
+                        <label key={severity} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={mapSeverityFilters[severity]}
+                            onChange={(e) => setMapSeverityFilters(prev => ({ ...prev, [severity]: e.target.checked }))}
+                            className="w-4 h-4 rounded border"
+                          />
+                          <span className="capitalize">{severity}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
         )}
