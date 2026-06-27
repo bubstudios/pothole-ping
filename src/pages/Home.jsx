@@ -355,6 +355,7 @@ export default function Home() {
       photo_url: photo_url || '',
     };
     const created = await base44.entities.PotholeReport.create(report);
+    try { await base44.entities.PotholeStatusEvent.create({ pothole_id: created.id, status: 'reported', note: 'Initially reported' }); } catch (e) {}
     setNewPin(null);
     setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin.lat || p.lng !== newPin.lng));
     setJurisdictionInfo(null);
@@ -441,6 +442,8 @@ export default function Home() {
           fixed_by: currentUser?.id || '',
         });
         await base44.entities.PotholeConfirmation.create({ pothole_id: id, action });
+        try { await base44.entities.PotholeStatusEvent.create({ pothole_id: id, status: 'fixed', note: 'Marked fixed by community' }); } catch (e) {}
+        try { await base44.functions.invoke('notifyReportOwner', { reportId: id, newStatus: 'fixed' }); } catch (e) {}
         if (rep) {
           const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
           await base44.entities.UserReputation.update(fresh.id, {
@@ -468,6 +471,8 @@ export default function Home() {
           disputed_by: currentUser?.id || '',
         });
         await base44.entities.PotholeConfirmation.create({ pothole_id: id, action });
+        try { await base44.entities.PotholeStatusEvent.create({ pothole_id: id, status: 'disputed', note: 'Reported still there' }); } catch (e) {}
+        try { await base44.functions.invoke('notifyReportOwner', { reportId: id, newStatus: 'disputed' }); } catch (e) {}
         // Penalize the fixer (re-read latest)
         if (pothole.fixed_by) {
           const fixerReps = await base44.entities.UserReputation.filter({ created_by_id: pothole.fixed_by });
