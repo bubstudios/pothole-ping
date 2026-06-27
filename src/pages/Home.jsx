@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug, Camera, TrendingUp, Route } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug, Camera, TrendingUp, Route, FileText, Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SupportButton from '@/components/SupportButton';
 import {
@@ -29,6 +29,7 @@ import FeedbackModal from '@/components/FeedbackModal';
 import PullToRefresh from '@/components/PullToRefresh';
 import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
 import OnboardingTour from '@/components/OnboardingTour';
+import QuickConfirmSheet from '@/components/pothole/QuickConfirmSheet';
 import { toast } from '@/components/ui/use-toast';
 
 // Verified jurisdiction contact overrides — applied after LLM lookup
@@ -138,6 +139,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRep, setUserRep] = useState(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [quickConfirmPothole, setQuickConfirmPothole] = useState(null);
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -399,7 +401,7 @@ export default function Home() {
     setIsDropping(false);
     setSidebarOpen(false);
     setFlyToCenter(null);
-    navigate(`/pothole/${pothole.id}`);
+    setQuickConfirmPothole(pothole);
   };
 
   const handleUpvote = async (id, markFixed = false) => {
@@ -702,6 +704,18 @@ export default function Home() {
                   <Link to="/photos" className="flex items-center gap-2 cursor-pointer">
                     <Camera className="w-4 h-4" />
                     Photo Gallery
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/my-reports" className="flex items-center gap-2 cursor-pointer">
+                    <FileText className="w-4 h-4" />
+                    My Reports
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/report-card" className="flex items-center gap-2 cursor-pointer">
+                    <Award className="w-4 h-4" />
+                    State of the Roads
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -1017,6 +1031,20 @@ export default function Home() {
       />
 
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+
+      <QuickConfirmSheet
+        pothole={quickConfirmPothole}
+        onConfirm={() => {
+          handleUpvote(quickConfirmPothole.id);
+          setQuickConfirmPothole(null);
+        }}
+        onViewDetails={() => {
+          const p = quickConfirmPothole;
+          setQuickConfirmPothole(null);
+          navigate(`/pothole/${p.id}`);
+        }}
+        onDismiss={() => setQuickConfirmPothole(null)}
+      />
 
       {showOnboarding && (
         <OnboardingTour

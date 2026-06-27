@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Building2, Clock, AlertTriangle, CheckCircle2, Timer, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Building2, Clock, AlertTriangle, CheckCircle2, Timer, TrendingDown, Award } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import moment from 'moment';
@@ -105,6 +105,10 @@ export default function BureaucracyTracker() {
           <Building2 className="w-6 h-6 text-amber-600" />
           <h1 className="font-heading font-bold text-lg">Bureaucracy Tracker</h1>
         </div>
+        <Link to="/report-card" className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-amber-600 border-amber-200 hover:bg-amber-50 transition-colors">
+          <Award className="w-3.5 h-3.5" />
+          Report Card
+        </Link>
       </header>
 
       <ScrollArea className="h-[calc(100vh-57px)]">

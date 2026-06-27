@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2, Moon, Sun, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Trash2, Moon, Sun, AlertTriangle, FileText } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export default function Settings() {
@@ -40,6 +40,15 @@ export default function Settings() {
       </header>
 
       <div className="max-w-md mx-auto p-4 space-y-4">
+        {/* My Reports */}
+        <Link to="/my-reports" className="bg-card rounded-xl border p-4 flex items-center gap-3 hover:border-primary/30 transition-colors">
+          <FileText className="w-5 h-5 text-primary" />
+          <div>
+            <p className="font-medium text-sm">My Reports</p>
+            <p className="text-xs text-muted-foreground">Track your reported potholes</p>
+          </div>
+        </Link>
+
         {/* Dark Mode Toggle */}
         <div className="bg-card rounded-xl border p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

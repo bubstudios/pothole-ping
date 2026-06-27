@@ -13,6 +13,8 @@ import PhotoGallery from '@/pages/PhotoGallery';
 import AnalyticsDashboard from '@/pages/AnalyticsDashboard';
 import CommuteSaver from '@/pages/CommuteSaver';
 import AdminDashboard from '@/pages/AdminDashboard';
+import MyReports from '@/pages/MyReports';
+import StateOfRoads from '@/pages/StateOfRoads';
 
 const TABS = [
   { path: '/', Page: Home },
@@ -20,9 +22,11 @@ const TABS = [
   { path: '/leaderboard', Page: Leaderboard },
   { path: '/hall-of-shame', Page: HallOfShame },
   { path: '/bureaucracy', Page: BureaucracyTracker },
+  { path: '/report-card', Page: StateOfRoads },
   { path: '/watch-zones', Page: WatchZones },
   { path: '/photos', Page: PhotoGallery },
   { path: '/analytics', Page: AnalyticsDashboard },
+  { path: '/my-reports', Page: MyReports },
   { path: '/admin', Page: AdminDashboard },
   { path: '/settings', Page: Settings },
   { path: '/manage-sponsors', Page: ManageSponsors },
