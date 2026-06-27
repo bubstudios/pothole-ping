@@ -89,6 +89,8 @@ export default function PotholeDetailPage() {
       if (markFixed) {
         await base44.entities.PotholeReport.update(potholeId, { status: 'fixed', fixed_by: currentUser?.id || '' });
         await base44.entities.PotholeConfirmation.create({ pothole_id: potholeId, action });
+        try { await base44.entities.PotholeStatusEvent.create({ pothole_id: potholeId, status: 'fixed', note: 'Marked fixed by community' }); } catch (e) {}
+        try { await base44.functions.invoke('notifyReportOwner', { reportId: potholeId, newStatus: 'fixed' }); } catch (e) {}
         if (rep) {
           const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
           await base44.entities.UserReputation.update(fresh.id, {
@@ -110,6 +112,8 @@ export default function PotholeDetailPage() {
       } else if (pothole.status === 'fixed') {
         await base44.entities.PotholeReport.update(potholeId, { status: 'disputed', disputed_by: currentUser?.id || '' });
         await base44.entities.PotholeConfirmation.create({ pothole_id: potholeId, action });
+        try { await base44.entities.PotholeStatusEvent.create({ pothole_id: potholeId, status: 'disputed', note: 'Reported still there' }); } catch (e) {}
+        try { await base44.functions.invoke('notifyReportOwner', { reportId: potholeId, newStatus: 'disputed' }); } catch (e) {}
         if (pothole.fixed_by) {
           const fixerReps = await base44.entities.UserReputation.filter({ created_by_id: pothole.fixed_by });
           if (fixerReps[0]) {

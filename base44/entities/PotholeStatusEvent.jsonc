@@ -1,0 +1,47 @@
+{
+  "name": "PotholeStatusEvent",
+  "type": "object",
+  "properties": {
+    "pothole_id": {
+      "type": "string",
+      "description": "ID of the pothole this status event belongs to"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "reported",
+        "acknowledged",
+        "in_progress",
+        "fixed",
+        "disputed"
+      ],
+      "description": "The status at this point in time"
+    },
+    "note": {
+      "type": "string",
+      "description": "Optional context, e.g. 'Marked fixed by community'"
+    }
+  },
+  "required": [
+    "pothole_id",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "user"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

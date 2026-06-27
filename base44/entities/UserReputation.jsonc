@@ -26,6 +26,10 @@
       "type": "number",
       "default": 0,
       "description": "Times user's fix was disputed"
+    },
+    "onesignal_player_id": {
+      "type": "string",
+      "description": "OneSignal push notification player/subscriber ID"
     }
   },
   "required": [],

@@ -9,6 +9,7 @@ import JurisdictionCard from './JurisdictionCard';
 import DamageReportForm from './DamageReportForm';
 import ShareButton from './ShareButton';
 import TrustedPartners from './TrustedPartners';
+import StatusTimeline from './StatusTimeline';
 import AdvertiseCTA from '@/components/AdvertiseCTA';
 import moment from 'moment';
 
@@ -169,6 +170,8 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
           <p className="text-xs mt-1">No one has confirmed this report in over 30 days. Please verify and confirm if it still exists.</p>
         </div>
       )}
+
+      <StatusTimeline pothole={pothole} />
 
       <DamageReportForm potholeId={pothole.id} reportCreatedDate={pothole.created_date} />
 
