@@ -9,12 +9,14 @@ const severityConfig = {
   dangerous: { label: 'Dangerous', color: 'bg-red-200 text-red-800' },
 };
 
-export default function DuplicateWarning({ candidate, distanceFt, onConfirm, onReportAnyway, onDismiss }) {
-  const pinLat = candidate ? Number(candidate.latitude) : 0;
-  const pinLng = candidate ? Number(candidate.longitude) : 0;
-  const dist = candidate ? Math.round(distanceFt(pinLat, pinLng, pinLat, pinLng)) : 0;
-
+export default function DuplicateWarning({ candidate, pin, distanceFt, onConfirm, onReportAnyway, onDismiss }) {
   if (!candidate) return null;
+
+  const fromLat = pin ? Number(pin.lat) : Number(candidate.latitude);
+  const fromLng = pin ? Number(pin.lng) : Number(candidate.longitude);
+  const feetAway = Math.round(
+    distanceFt(fromLat, fromLng, Number(candidate.latitude), Number(candidate.longitude))
+  );
 
   return (
     <div className="space-y-4">
@@ -26,7 +28,7 @@ export default function DuplicateWarning({ candidate, distanceFt, onConfirm, onR
           <div>
             <h4 className="text-sm font-semibold text-amber-800">Possible Duplicate</h4>
             <p className="text-xs text-amber-700 mt-1">
-              A pothole was already reported about {Math.round(distanceFt(pinLat, pinLng, Number(candidate.latitude), Number(candidate.longitude)))} feet away.
+              A pothole was already reported about {feetAway} feet away.
               Confirm it instead to avoid duplicates.
             </p>
           </div>

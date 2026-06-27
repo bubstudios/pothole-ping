@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PotholeDetail from '@/components/pothole/PotholeDetail';
+import { toast } from '@/components/ui/use-toast';
 
 export default function PotholeDetailPage() {
   const { id } = useParams();
@@ -34,9 +35,8 @@ export default function PotholeDetailPage() {
   const loadPothole = async () => {
     setLoading(true);
     try {
-      const found = await base44.entities.PotholeReport.list('-created_date', 200);
-      const p = found.find(r => r.id === id);
-      setPothole(p || null);
+      const rows = await base44.entities.PotholeReport.filter({ id });
+      setPothole(rows[0] || null);
     } catch (e) {
       setPothole(null);
     }
@@ -58,6 +58,22 @@ export default function PotholeDetailPage() {
   const handleUpvote = useCallback(async (potholeId, markFixed = false) => {
     if (!pothole) return;
     const weight = getWeight();
+    const action = markFixed ? 'fixed' : (pothole.status === 'fixed' ? 'disputed' : 'confirm');
+
+    // Block repeats
+    if (currentUser) {
+      try {
+        const existing = await base44.entities.PotholeConfirmation.filter({
+          pothole_id: potholeId,
+          created_by_id: currentUser.id,
+          action,
+        });
+        if (existing.length > 0) {
+          toast({ title: 'You already confirmed this one.' });
+          return;
+        }
+      } catch (e) {}
+    }
 
     const optimisticUpdates = markFixed
       ? { status: 'fixed', fixed_by: currentUser?.id || '' }
@@ -72,12 +88,14 @@ export default function PotholeDetailPage() {
 
       if (markFixed) {
         await base44.entities.PotholeReport.update(potholeId, { status: 'fixed', fixed_by: currentUser?.id || '' });
+        await base44.entities.PotholeConfirmation.create({ pothole_id: potholeId, action });
         if (rep) {
-          await base44.entities.UserReputation.update(rep.id, {
-            karma: (rep.karma || 0) + 5,
-            fixes_marked: (rep.fixes_marked || 0) + 1,
+          const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
+          await base44.entities.UserReputation.update(fresh.id, {
+            karma: (fresh.karma || 0) + 5,
+            fixes_marked: (fresh.fixes_marked || 0) + 1,
           });
-          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 5, fixes_marked: (prev.fixes_marked || 0) + 1 } : prev);
+          setUserRep({ ...fresh, karma: (fresh.karma || 0) + 5, fixes_marked: (fresh.fixes_marked || 0) + 1 });
         }
         if (pothole.submission_email) {
           try {
@@ -91,33 +109,38 @@ export default function PotholeDetailPage() {
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#f97316', '#fbbf24', '#3b82f6'] });
       } else if (pothole.status === 'fixed') {
         await base44.entities.PotholeReport.update(potholeId, { status: 'disputed', disputed_by: currentUser?.id || '' });
+        await base44.entities.PotholeConfirmation.create({ pothole_id: potholeId, action });
         if (pothole.fixed_by) {
           const fixerReps = await base44.entities.UserReputation.filter({ created_by_id: pothole.fixed_by });
           if (fixerReps[0]) {
-            await base44.entities.UserReputation.update(fixerReps[0].id, {
-              karma: (fixerReps[0].karma || 0) - 3,
-              fixes_disputed: (fixerReps[0].fixes_disputed || 0) + 1,
+            const freshFixer = (await base44.entities.UserReputation.filter({ id: fixerReps[0].id }))[0] || fixerReps[0];
+            await base44.entities.UserReputation.update(freshFixer.id, {
+              karma: (freshFixer.karma || 0) - 3,
+              fixes_disputed: (freshFixer.fixes_disputed || 0) + 1,
             });
           }
         }
         if (rep) {
-          await base44.entities.UserReputation.update(rep.id, {
-            karma: (rep.karma || 0) + 3,
-            confirmations_given: (rep.confirmations_given || 0) + 1,
+          const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
+          await base44.entities.UserReputation.update(fresh.id, {
+            karma: (fresh.karma || 0) + 3,
+            confirmations_given: (fresh.confirmations_given || 0) + 1,
           });
-          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 3, confirmations_given: (prev.confirmations_given || 0) + 1 } : prev);
+          setUserRep({ ...fresh, karma: (fresh.karma || 0) + 3, confirmations_given: (fresh.confirmations_given || 0) + 1 });
         }
       } else {
         await base44.entities.PotholeReport.update(potholeId, {
           upvotes: (Number(pothole.upvotes) || 0) + weight,
           last_confirmed_date: new Date().toISOString(),
         });
+        await base44.entities.PotholeConfirmation.create({ pothole_id: potholeId, action });
         if (rep) {
-          await base44.entities.UserReputation.update(rep.id, {
-            karma: (rep.karma || 0) + 2,
-            confirmations_given: (rep.confirmations_given || 0) + 1,
+          const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
+          await base44.entities.UserReputation.update(fresh.id, {
+            karma: (fresh.karma || 0) + 2,
+            confirmations_given: (fresh.confirmations_given || 0) + 1,
           });
-          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 2, confirmations_given: (prev.confirmations_given || 0) + 1 } : prev);
+          setUserRep({ ...fresh, karma: (fresh.karma || 0) + 2, confirmations_given: (fresh.confirmations_given || 0) + 1 });
         }
       }
     } catch (e) {

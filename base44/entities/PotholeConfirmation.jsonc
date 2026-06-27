@@ -1,0 +1,39 @@
+{
+  "name": "PotholeConfirmation",
+  "type": "object",
+  "properties": {
+    "pothole_id": {
+      "type": "string",
+      "description": "ID of the pothole this confirmation refers to"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "confirm",
+        "fixed",
+        "disputed"
+      ],
+      "description": "The action the user performed on this pothole"
+    }
+  },
+  "required": [
+    "pothole_id",
+    "action"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "user"
+      }
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

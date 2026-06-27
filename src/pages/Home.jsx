@@ -29,6 +29,7 @@ import FeedbackModal from '@/components/FeedbackModal';
 import PullToRefresh from '@/components/PullToRefresh';
 import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
 import OnboardingTour from '@/components/OnboardingTour';
+import { toast } from '@/components/ui/use-toast';
 
 // Verified jurisdiction contact overrides — applied after LLM lookup
 const JURISDICTION_OVERRIDES = [
@@ -61,10 +62,15 @@ function applyJurisdictionOverrides(info) {
 }
 
 async function reverseGeocode(lat, lng) {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-  const res = await fetch(url);
-  const data = await res.json();
-  return data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error(`geocode ${res.status}`);
+    const data = await res.json();
+    return data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  } catch (e) {
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }
 }
 
 async function lookupJurisdiction(lat, lng, address) {
@@ -128,6 +134,7 @@ export default function Home() {
   const [heatmapTimeRange, setHeatmapTimeRange] = useState('all');
   const [hotZonesEnabled, setHotZonesEnabled] = useState(false);
   const [duplicateCandidate, setDuplicateCandidate] = useState(null);
+  const [duplicatePin, setDuplicatePin] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRep, setUserRep] = useState(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -283,6 +290,7 @@ export default function Home() {
 
     if (nearby) {
       setDuplicateCandidate(nearby);
+      setDuplicatePin({ lat, lng });
       setNewPin(null);
       setSidebarOpen(true);
       setJurisdictionInfo(null);
@@ -381,6 +389,7 @@ export default function Home() {
     setJurisdictionInfo(null);
     setIsLoadingJurisdiction(false);
     setDuplicateCandidate(null);
+    setDuplicatePin(null);
     setSidebarOpen(false);
   };
 
@@ -397,8 +406,24 @@ export default function Home() {
     if (!pothole) return;
 
     const weight = getWeight();
+    const action = markFixed ? 'fixed' : (pothole.status === 'fixed' ? 'disputed' : 'confirm');
 
-    // Optimistic UI update — update local state immediately
+    // Block repeats — check if this user already performed this action on this pothole
+    if (currentUser) {
+      try {
+        const existing = await base44.entities.PotholeConfirmation.filter({
+          pothole_id: id,
+          created_by_id: currentUser.id,
+          action,
+        });
+        if (existing.length > 0) {
+          toast({ title: 'You already confirmed this one.' });
+          return;
+        }
+      } catch (e) {}
+    }
+
+    // Optimistic UI update — applied only after guard passes
     const optimisticUpdates = markFixed
       ? { status: 'fixed', fixed_by: currentUser?.id || '' }
       : pothole.status === 'fixed'
@@ -415,12 +440,14 @@ export default function Home() {
           status: 'fixed',
           fixed_by: currentUser?.id || '',
         });
+        await base44.entities.PotholeConfirmation.create({ pothole_id: id, action });
         if (rep) {
-          await base44.entities.UserReputation.update(rep.id, {
-            karma: (rep.karma || 0) + 5,
-            fixes_marked: (rep.fixes_marked || 0) + 1,
+          const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
+          await base44.entities.UserReputation.update(fresh.id, {
+            karma: (fresh.karma || 0) + 5,
+            fixes_marked: (fresh.fixes_marked || 0) + 1,
           });
-          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 5, fixes_marked: (prev.fixes_marked || 0) + 1 } : prev);
+          setUserRep({ ...fresh, karma: (fresh.karma || 0) + 5, fixes_marked: (fresh.fixes_marked || 0) + 1 });
         }
         // Send thank-you email to the agency
         if (pothole.submission_email) {
@@ -440,34 +467,39 @@ export default function Home() {
           status: 'disputed',
           disputed_by: currentUser?.id || '',
         });
-        // Penalize the fixer
+        await base44.entities.PotholeConfirmation.create({ pothole_id: id, action });
+        // Penalize the fixer (re-read latest)
         if (pothole.fixed_by) {
           const fixerReps = await base44.entities.UserReputation.filter({ created_by_id: pothole.fixed_by });
           if (fixerReps[0]) {
-            await base44.entities.UserReputation.update(fixerReps[0].id, {
-              karma: (fixerReps[0].karma || 0) - 3,
-              fixes_disputed: (fixerReps[0].fixes_disputed || 0) + 1,
+            const freshFixer = (await base44.entities.UserReputation.filter({ id: fixerReps[0].id }))[0] || fixerReps[0];
+            await base44.entities.UserReputation.update(freshFixer.id, {
+              karma: (freshFixer.karma || 0) - 3,
+              fixes_disputed: (freshFixer.fixes_disputed || 0) + 1,
             });
           }
         }
         if (rep) {
-          await base44.entities.UserReputation.update(rep.id, {
-            karma: (rep.karma || 0) + 3,
-            confirmations_given: (rep.confirmations_given || 0) + 1,
+          const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
+          await base44.entities.UserReputation.update(fresh.id, {
+            karma: (fresh.karma || 0) + 3,
+            confirmations_given: (fresh.confirmations_given || 0) + 1,
           });
-          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 3, confirmations_given: (prev.confirmations_given || 0) + 1 } : prev);
+          setUserRep({ ...fresh, karma: (fresh.karma || 0) + 3, confirmations_given: (fresh.confirmations_given || 0) + 1 });
         }
       } else {
         await base44.entities.PotholeReport.update(id, {
           upvotes: (Number(pothole.upvotes) || 0) + weight,
           last_confirmed_date: new Date().toISOString(),
         });
+        await base44.entities.PotholeConfirmation.create({ pothole_id: id, action });
         if (rep) {
-          await base44.entities.UserReputation.update(rep.id, {
-            karma: (rep.karma || 0) + 2,
-            confirmations_given: (rep.confirmations_given || 0) + 1,
+          const fresh = (await base44.entities.UserReputation.filter({ id: rep.id }))[0] || rep;
+          await base44.entities.UserReputation.update(fresh.id, {
+            karma: (fresh.karma || 0) + 2,
+            confirmations_given: (fresh.confirmations_given || 0) + 1,
           });
-          setUserRep(prev => prev ? { ...prev, karma: (prev.karma || 0) + 2, confirmations_given: (prev.confirmations_given || 0) + 1 } : prev);
+          setUserRep({ ...fresh, karma: (fresh.karma || 0) + 2, confirmations_given: (fresh.confirmations_given || 0) + 1 });
         }
       }
     } catch (e) {
@@ -916,10 +948,12 @@ export default function Home() {
                 {duplicateCandidate && !newPin && (
                   <DuplicateWarning
                     candidate={duplicateCandidate}
+                    pin={duplicatePin}
                     distanceFt={distanceFt}
                     onConfirm={(pothole) => {
                       handleUpvote(pothole.id);
                       setDuplicateCandidate(null);
+                      setDuplicatePin(null);
                       setSidebarOpen(false);
                       navigate(`/pothole/${pothole.id}`);
                     }}
@@ -929,6 +963,7 @@ export default function Home() {
                       const offset = 0.00015;
                       const pin = { lat: lat + offset, lng: lng + offset };
                       setDuplicateCandidate(null);
+                      setDuplicatePin(null);
                       setNewPin(pin);
                       setIsLoadingJurisdiction(true);
                       (async () => {
@@ -943,6 +978,7 @@ export default function Home() {
                     }}
                     onDismiss={() => {
                       setDuplicateCandidate(null);
+                      setDuplicatePin(null);
                       setSidebarOpen(false);
                     }}
                   />
