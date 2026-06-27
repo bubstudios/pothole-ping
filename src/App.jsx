@@ -57,8 +57,8 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <AuthenticatedApp />
+          <OneSignalInit />
         </Router>
-        <OneSignalInit />
         <PwaInstallPrompt />
         <Toaster />
       </QueryClientProvider>
