@@ -374,6 +374,9 @@ export default function Home() {
       } catch (e) {}
     }
 
+    // Prompt for push notifications after first successful report
+    window.__promptPush?.();
+
     // Send email receipt to the reporter
     if (currentUser?.email && jurisdictionInfo?.jurisdiction_name) {
       try {
