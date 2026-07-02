@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUp, Loader2, FileText, Download, Car, X, CheckCircle } from 'lucide-react';
-import moment from 'moment';
+import { formatDistanceToNow, format } from 'date-fns';
 
 const DAMAGE_LABELS = {
   tire: 'Tire',
@@ -121,7 +121,7 @@ export default function DamageReportForm({ potholeId, reportCreatedDate }) {
 
       {reportWasBefore !== null && (
         <p className="text-xs bg-green-50 border border-green-200 rounded-md px-3 py-2 text-green-700">
-          This pothole was reported on {moment(reportCreatedDate).format('MMM D, YYYY [at] h:mm A')}.
+          This pothole was reported on {format(new Date(reportCreatedDate), "MMM d, yyyy 'at' h:mm a")}.
           If your damage occurred after this date, the city was on notice — strengthening your claim.
         </p>
       )}
@@ -137,7 +137,7 @@ export default function DamageReportForm({ potholeId, reportCreatedDate }) {
               </div>
               {d.description && <p className="text-xs text-muted-foreground">{d.description}</p>}
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{moment(d.created_date).fromNow()}</span>
+                <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(d.created_date), { addSuffix: true })}</span>
                 <div className="flex items-center gap-2">
                   {d.claim_status === 'packet_generated' && (
                     <span className="text-xs text-green-600 flex items-center gap-1">

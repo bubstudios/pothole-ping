@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Camera, Search, Filter, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import moment from 'moment';
+import { formatDistanceToNow } from 'date-fns';
 
 const severityBadge = {
   minor: 'bg-yellow-400 text-yellow-900',
@@ -132,7 +132,7 @@ export default function PhotoGallery() {
                 <div className="p-3">
                   <p className="text-sm font-medium truncate">{p.address || 'Unknown'}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {moment(p.created_date).fromNow()}
+                    {formatDistanceToNow(new Date(p.created_date), { addSuffix: true })}
                     {p.jurisdiction_name && ` · ${p.jurisdiction_name}`}
                   </p>
                 </div>

@@ -249,6 +249,7 @@ export default function PotholeMap({
       {!sidebarOpen && userPosition && onToggleFollow && (
         <button
           onClick={onToggleFollow}
+          aria-label={followUser ? 'Stop following my location' : 'Follow my location'}
           className="absolute bottom-20 left-4 z-[1000] bg-card border shadow-lg rounded-full w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
           title={followUser ? 'Stop following my location' : 'Follow my location'}
         >

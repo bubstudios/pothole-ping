@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MobileSelect from '@/components/ui/mobile-select';
 import { ArrowLeft, Search, Plus, MessageSquare, Bell, BellOff, ChevronDown, ChevronRight, MapPin, AlertTriangle, MessageCircle } from 'lucide-react';
-import moment from 'moment';
+import { formatDistanceToNow } from 'date-fns';
 
 const postTypeIcons = {
   discussion: MessageCircle,
@@ -38,7 +38,7 @@ function CommentThread({ comment, allComments, postId, onReply }) {
       <div className="py-2">
         <div className="flex items-center gap-2">
           <span className="font-medium text-xs">{comment.author_name || 'Anonymous'}</span>
-          <span className="text-[10px] text-muted-foreground">{moment(comment.created_date).fromNow()}</span>
+          <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(comment.created_date), { addSuffix: true })}</span>
         </div>
         <p className="text-sm mt-0.5">{comment.text}</p>
         <button
@@ -111,7 +111,7 @@ function PostCard({ post, onNewComment }) {
       </div>
       <p className="text-sm text-muted-foreground line-clamp-2">{post.text}</p>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>{post.author_name || 'Anonymous'} · {moment(post.created_date).fromNow()}</span>
+        <span>{post.author_name || 'Anonymous'} · {formatDistanceToNow(new Date(post.created_date), { addSuffix: true })}</span>
         <button
           onClick={handleExpand}
           className="flex items-center gap-1 text-primary hover:underline"

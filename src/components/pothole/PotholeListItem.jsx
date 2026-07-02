@@ -1,6 +1,6 @@
 import React from 'react';
 import { MapPin, ThumbsUp, Clock, AlertTriangle, Zap } from 'lucide-react';
-import moment from 'moment';
+import { formatDistanceToNow } from 'date-fns';
 import ShareButton from './ShareButton';
 
 const severityDots = {
@@ -18,7 +18,7 @@ function isStale(pothole) {
   return daysSince > 30;
 }
 
-export default function PotholeListItem({ pothole, onClick }) {
+export default React.memo(function PotholeListItem({ pothole, onClick }) {
   const stale = isStale(pothole);
   return (
     <button
@@ -57,7 +57,7 @@ export default function PotholeListItem({ pothole, onClick }) {
             </span>
             <span className="flex items-center gap-0.5 text-muted-foreground">
               <Clock className="w-3 h-3" />
-              {moment(pothole.created_date).fromNow()}
+              {formatDistanceToNow(new Date(pothole.created_date), { addSuffix: true })}
             </span>
             <span onClick={(e) => e.stopPropagation()}>
               <ShareButton pothole={pothole} />
@@ -67,4 +67,4 @@ export default function PotholeListItem({ pothole, onClick }) {
       </div>
     </button>
   );
-}
+});

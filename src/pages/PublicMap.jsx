@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { base44 } from '@/api/base44Client';
 import { AlertTriangle, Code, Copy, Check } from 'lucide-react';
-import moment from 'moment';
+import { formatDistanceToNow } from 'date-fns';
 
 const severityColors = {
   minor: '#eab308',
@@ -84,7 +84,7 @@ export default function PublicMap() {
                       <p className="text-xs mt-1">Managed by {p.jurisdiction_name}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      Reported {moment(p.created_date).fromNow()}
+                      Reported {formatDistanceToNow(new Date(p.created_date), { addSuffix: true })}
                     </p>
                     {p.status !== 'fixed' && (
                       <p className="text-xs mt-2 text-primary font-medium">

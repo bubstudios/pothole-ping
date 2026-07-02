@@ -20,6 +20,7 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
   const [geoError, setGeoError] = useState(null);
   const [watchId, setWatchId] = useState(null);
   const alertedIds = useRef(new Set());
+  const liveRegionRef = useRef(null);
 
   // Prune alert history when potholes are removed — but keep existing IDs
   // so driving past the same pothole doesn't re-trigger avoidance recordings
@@ -99,10 +100,12 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
     if (nearest && minDist < 100 && !alertedIds.current.has(nearest.id)) {
       alertedIds.current.add(nearest.id);
       const feet = Math.round(minDist * 3.28084);
+      const alertMsg = `A ${nearest.severity} pothole is ${feet}ft ahead at ${nearest.address || 'unknown location'}. Drive carefully!`;
       toast.warning('Pothole Nearby!', {
-        description: `A ${nearest.severity} pothole is ${feet}ft ahead at ${nearest.address || 'unknown location'}. Drive carefully!`,
+        description: alertMsg,
         duration: 8000,
       });
+      if (liveRegionRef.current) liveRegionRef.current.textContent = `Pothole nearby! ${alertMsg}`;
       onAvoidance?.(nearest, minDist);
     }
 
@@ -123,6 +126,7 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
 
   return (
     <div className="flex items-center gap-2">
+      <div aria-live="assertive" aria-atomic="true" className="sr-only" ref={liveRegionRef} />
       <button
         onClick={onToggle}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${

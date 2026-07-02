@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Building2, Clock, AlertTriangle, CheckCircle2, Timer, TrendingDown, Award } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import moment from 'moment';
+import { differenceInDays, isBefore } from 'date-fns';
 
 const statusLabel = {
   reported: 'Reported',
@@ -62,7 +62,7 @@ export default function BureaucracyTracker() {
       }
       jurMap[key].total++;
       jurMap[key][p.status]++;
-      if (!jurMap[key].oldestReport || moment(p.created_date).isBefore(jurMap[key].oldestReport)) {
+      if (!jurMap[key].oldestReport || isBefore(new Date(p.created_date), new Date(jurMap[key].oldestReport))) {
         jurMap[key].oldestReport = p.created_date;
       }
     });
@@ -76,7 +76,7 @@ export default function BureaucracyTracker() {
     setLoading(false);
   };
 
-  const daysAgo = (date) => Math.max(0, moment().diff(moment(date), 'days'));
+  const daysAgo = (date) => Math.max(0, differenceInDays(new Date(), new Date(date)));
 
   if (loading) {
     return (
@@ -88,7 +88,7 @@ export default function BureaucracyTracker() {
 
   const unfixedPotholes = potholes
     .filter((p) => p.status !== 'fixed')
-    .sort((a, b) => moment(a.created_date).diff(moment(b.created_date)));
+    .sort((a, b) => differenceInDays(new Date(a.created_date), new Date(b.created_date)));
 
   const stuckPotholes = unfixedPotholes.filter((p) => p.status === 'reported');
   const avgDaysToAcknowledge = potholes

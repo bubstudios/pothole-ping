@@ -30,7 +30,7 @@ export default function QuickConfirmSheet({ pothole, onConfirm, onViewDetails, o
               {Math.round(pothole.upvotes || 0)} confirms · {pothole.severity}
             </p>
           </div>
-          <button onClick={onDismiss} className="p-1 hover:bg-muted rounded-lg">
+          <button onClick={onDismiss} aria-label="Dismiss" className="p-1 hover:bg-muted rounded-lg">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Award, Share2, Check, TrendingDown, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import moment from 'moment';
+import { differenceInDays, format, isAfter, isEqual, startOfMonth } from 'date-fns';
 
 const STATUS_ORDER = ['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'];
 
@@ -32,8 +32,8 @@ export default function StateOfRoads() {
         }
       });
 
-      const now = moment();
-      const startOfMonth = moment().startOf('month');
+      const now = new Date();
+      const monthStart = startOfMonth(now);
 
       const jurMap = {};
       potholes.forEach((p) => {
@@ -48,18 +48,18 @@ export default function StateOfRoads() {
           };
         }
 
-        const created = moment(p.created_date);
-        const isThisMonth = created.isSameOrAfter(startOfMonth);
+        const created = new Date(p.created_date);
+        const isThisMonth = isAfter(created, monthStart) || isEqual(created, monthStart);
 
         if (isThisMonth) jurMap[key].reportedThisMonth++;
 
         if (p.status === 'fixed') {
-          const fixedDate = fixedEventMap[p.id] ? moment(fixedEventMap[p.id]) : null;
-          if (fixedDate && fixedDate.isSameOrAfter(startOfMonth)) {
+          const fixedDate = fixedEventMap[p.id] ? new Date(fixedEventMap[p.id]) : null;
+          if (fixedDate && (isAfter(fixedDate, monthStart) || isEqual(fixedDate, monthStart))) {
             jurMap[key].fixedThisMonth++;
           }
           if (fixedDate) {
-            const daysToFix = fixedDate.diff(created, 'days');
+            const daysToFix = differenceInDays(fixedDate, created);
             if (daysToFix >= 0) jurMap[key].fixTimesDays.push(daysToFix);
           }
         }
@@ -67,7 +67,7 @@ export default function StateOfRoads() {
         // Still open past 30 days
         if (p.status !== 'fixed' && p.status !== 'disputed') {
           const refDate = p.last_confirmed_date || p.created_date;
-          if (refDate && now.diff(moment(refDate), 'days') > 30) {
+          if (refDate && differenceInDays(now, new Date(refDate)) > 30) {
             jurMap[key].openPast30++;
           }
         }
@@ -98,7 +98,7 @@ export default function StateOfRoads() {
       const fixPart = j.avgDaysToFix ? `avg ${j.avgDaysToFix} days` : 'no fixes yet';
       return `${j.name}: ${j.fixedThisMonth} of ${j.reportedThisMonth} fixed this month — ${fixPart}`;
     });
-    const text = `📊 State of the Roads — ${moment().format('MMMM YYYY')}\n\n${lines.join('\n')}\n\nSee the full map: ${window.location.origin}/map`;
+    const text = `📊 State of the Roads — ${format(new Date(), 'MMMM yyyy')}\n\n${lines.join('\n')}\n\nSee the full map: ${window.location.origin}/map`;
 
     if (navigator.share) {
       try { await navigator.share({ title: 'PotholePing State of the Roads', text }); } catch {}
@@ -141,7 +141,7 @@ export default function StateOfRoads() {
 
       <div className="max-w-2xl mx-auto p-4 space-y-3">
         <p className="text-xs text-muted-foreground text-center">
-          {moment().format('MMMM YYYY')} · Ranked best to worst
+          {format(new Date(), 'MMMM yyyy')} · Ranked best to worst
         </p>
 
         {/* Hall of Shame callout */}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import moment from 'moment';
+import { formatDistanceToNow } from 'date-fns';
 
 const statusConfig = {
   reported: { label: 'Reported', dot: 'bg-red-500', line: 'bg-red-300' },
@@ -46,7 +46,7 @@ export default function StatusTimeline({ pothole }) {
               <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-4'}`}>
                 <p className="text-sm font-medium">{config.label}</p>
                 {event.note && <p className="text-xs text-muted-foreground">{event.note}</p>}
-                <p className="text-xs text-muted-foreground mt-0.5">{moment(event.created_date).fromNow()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(event.created_date), { addSuffix: true })}</p>
               </div>
             </div>
           );

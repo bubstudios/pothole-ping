@@ -41,7 +41,7 @@ export default function FeedbackModal({ open, onClose }) {
       <div className="bg-card rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-heading font-semibold text-sm">Send Feedback</h3>
-          <button onClick={handleClose} className="p-1 hover:bg-muted rounded">
+          <button onClick={handleClose} aria-label="Close feedback modal" className="p-1 hover:bg-muted rounded">
             <X className="w-4 h-4" />
           </button>
         </div>

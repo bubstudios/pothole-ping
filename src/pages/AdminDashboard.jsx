@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Shield, Users, MapPin, DollarSign, BarChart3, Download, RefreshCw, FileJson, FileSpreadsheet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import PullToRefresh from '@/components/PullToRefresh';
-import moment from 'moment';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function AdminDashboard() {
   const [user, setUser] = useState(null);
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
                 <Link key={r.id} to={`/pothole/${r.id}`} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium truncate">{r.address || `${r.latitude?.toFixed(4)}, ${r.longitude?.toFixed(4)}`}</p>
-                    <p className="text-[10px] text-muted-foreground">{moment(r.created_date).fromNow()}</p>
+                    <p className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(r.created_date), { addSuffix: true })}</p>
                   </div>
                   <Badge className={`text-[10px] capitalize ${r.status === 'fixed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {r.status?.replace('_', ' ')}
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                   <div key={d.id} className="flex items-center justify-between p-2 rounded-lg">
                     <div>
                       <p className="text-xs font-medium">{d.donor_name || 'Anonymous'}</p>
-                      <p className="text-[10px] text-muted-foreground">{moment(d.created_date).fromNow()} {d.recurring ? '· Monthly' : ''}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(d.created_date), { addSuffix: true })} {d.recurring ? '· Monthly' : ''}</p>
                     </div>
                     <span className="text-sm font-bold text-green-600">${d.amount?.toFixed(2)}</span>
                   </div>

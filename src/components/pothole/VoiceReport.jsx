@@ -134,6 +134,7 @@ export default function VoiceReport({ onVoiceReport, isListening, onToggleListen
         </div>
       )}
       <button
+        aria-label={isListening ? 'Stop voice reporting' : 'Start voice reporting'}
         onClick={handleToggle}
         className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
           isListening && !needsGesture

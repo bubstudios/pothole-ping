@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Skull, Clock, Flame, AlertTriangle, MapPin } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import moment from 'moment';
+import { differenceInDays } from 'date-fns';
 
 const severityScore = {
   minor: 1,
@@ -21,7 +21,7 @@ const severityBadge = {
 };
 
 function calcShameScore(pothole) {
-  const daysOld = Math.max(1, moment().diff(moment(pothole.created_date), 'days'));
+  const daysOld = Math.max(1, differenceInDays(new Date(), new Date(pothole.created_date)));
   const sev = severityScore[pothole.severity] || 2;
   const upvotes = pothole.upvotes || 0;
   return daysOld * sev + upvotes * 3;
@@ -82,7 +82,7 @@ export default function HallOfShame() {
 
               {potholes.map((p, i) => {
                 const score = calcShameScore(p);
-                const daysOld = moment().diff(moment(p.created_date), 'days');
+                const daysOld = differenceInDays(new Date(), new Date(p.created_date));
 
                 return (
                   <div

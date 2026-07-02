@@ -48,9 +48,11 @@ export default function AppShell() {
   }, [location.pathname]);
 
   useEffect(() => {
-    setMountedTabs((prev) =>
-      prev.includes(location.pathname) ? prev : [...prev, location.pathname]
-    );
+    setMountedTabs((prev) => {
+      if (prev.includes(location.pathname)) return prev;
+      const next = [...prev, location.pathname];
+      return next.length > 5 ? next.slice(next.length - 5) : next;
+    });
   }, [location.pathname]);
 
   return (
@@ -67,6 +69,7 @@ export default function AppShell() {
               opacity: active ? 1 : 0,
             }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            aria-hidden={!active}
             style={{
               position: 'absolute',
               inset: 0,

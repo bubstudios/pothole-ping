@@ -11,7 +11,7 @@ import ShareButton from './ShareButton';
 import TrustedPartners from './TrustedPartners';
 import StatusTimeline from './StatusTimeline';
 import AdvertiseCTA from '@/components/AdvertiseCTA';
-import moment from 'moment';
+import { formatDistanceToNow } from 'date-fns';
 
 const severityBadge = {
   minor: 'bg-yellow-400 text-yellow-900',
@@ -139,7 +139,7 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
 
         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
           <Clock className="w-3 h-3" />
-          {moment(pothole.created_date).fromNow()}
+          {formatDistanceToNow(new Date(pothole.created_date), { addSuffix: true })}
         </div>
       </div>
 
@@ -308,7 +308,7 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
             <div key={c.id} className="bg-muted rounded-lg p-3">
               <p className="text-sm">{c.text}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {moment(c.created_date).fromNow()}
+                {formatDistanceToNow(new Date(c.created_date), { addSuffix: true })}
               </p>
             </div>
           ))}

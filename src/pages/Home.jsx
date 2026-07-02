@@ -578,6 +578,7 @@ export default function Home() {
 
         <div className="flex items-center gap-2">
           <button
+            aria-label="Toggle fixed potholes visibility"
             onClick={() => setShowFixed(!showFixed)}
             className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
               showFixed ? 'bg-green-50 border-green-300 text-green-700' : 'text-muted-foreground border-border hover:bg-muted'
@@ -749,6 +750,7 @@ export default function Home() {
             onClick={() => setFeedbackOpen(true)}
             className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
             title="Report a bug or suggest a feature"
+            aria-label="Send feedback or report a bug"
           >
             <Bug className="w-4 h-4" />
           </button>
@@ -832,6 +834,7 @@ export default function Home() {
             )}
             {!sidebarOpen && !commuterRouteData && (
               <button
+                aria-label={hotZonesEnabled ? 'Hide hot zones' : 'Show hot zones'}
                 onClick={() => setHotZonesEnabled(!hotZonesEnabled)}
                 className={`absolute top-4 left-4 z-[1000] px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg transition-all ${
                   hotZonesEnabled
@@ -845,7 +848,7 @@ export default function Home() {
             {!sidebarOpen && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="absolute top-4 right-4 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg bg-card text-foreground border-border hover:bg-muted transition-colors">
+                  <button aria-label="Toggle map filters" className="absolute top-4 right-4 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg bg-card text-foreground border-border hover:bg-muted transition-colors">
                     <span className="capitalize">Filters</span>
                     <span className="text-[10px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                       {mapFilteredPotholes.length}
