@@ -31,6 +31,7 @@ export default function HeatmapControls({
         size="sm"
         variant="outline"
         onClick={onToggle}
+        aria-label="Toggle heatmap"
         className="absolute top-2 left-2 z-[1000] gap-1.5 text-xs font-medium shadow-md"
       >
         <Flame className="w-3.5 h-3.5" />
@@ -46,7 +47,7 @@ export default function HeatmapControls({
           <Flame className="w-4 h-4 text-orange-500" />
           <span className="text-xs font-semibold font-heading">Heatmap</span>
         </div>
-        <button onClick={onToggle} className="p-0.5 hover:bg-muted rounded">
+        <button onClick={onToggle} aria-label="Close heatmap controls" className="p-0.5 hover:bg-muted rounded">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>

@@ -51,7 +51,7 @@ export default function AppShell() {
     setMountedTabs((prev) => {
       if (prev.includes(location.pathname)) return prev;
       const next = [...prev, location.pathname];
-      return next.length > 5 ? next.slice(next.length - 5) : next;
+      return next.length > 3 ? next.slice(next.length - 3) : next;
     });
   }, [location.pathname]);
 

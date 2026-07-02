@@ -32,7 +32,20 @@ const AuthenticatedApp = () => {
   const location = useLocation();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
-    return <div style={{ padding: 40 }} className="bg-background"><h2>Loading...</h2></div>;
+    return (
+      <div className="fixed inset-0 bg-background flex flex-col items-center justify-center gap-4">
+        <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+          <svg className="w-8 h-8 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div className="text-center">
+          <h1 className="font-heading font-bold text-xl text-foreground">PotholePing</h1>
+          <p className="text-sm text-muted-foreground mt-1">Loading...</p>
+        </div>
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (authError) {

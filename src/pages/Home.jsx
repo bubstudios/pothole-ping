@@ -647,6 +647,7 @@ export default function Home() {
           </Link>
           <div className="flex border rounded-lg overflow-hidden">
             <button
+              aria-label="Map view"
               onClick={() => setView('map')}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                 view === 'map' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
@@ -656,6 +657,7 @@ export default function Home() {
               Map
             </button>
             <button
+              aria-label="List view"
               onClick={() => setView('list')}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                 view === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
