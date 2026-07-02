@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, TrendingUp, PieChart, BarChart3, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
@@ -9,6 +9,7 @@ const SEVERITY_COLORS = { minor: '#eab308', moderate: '#f97316', severe: '#ef444
 const STATUS_COLORS = { reported: '#ef4444', acknowledged: '#f59e0b', in_progress: '#3b82f6', fixed: '#22c55e', disputed: '#a855f7' };
 
 export default function AnalyticsDashboard() {
+  const navigate = useNavigate();
   const [potholes, setPotholes] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,9 +78,9 @@ export default function AnalyticsDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
-        <Link to="/" className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />
           <h1 className="font-heading font-bold text-lg">Analytics</h1>

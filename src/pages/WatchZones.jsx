@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -167,6 +167,7 @@ function PostCard({ post, onNewComment }) {
 }
 
 export default function WatchZones() {
+  const navigate = useNavigate();
   const [zipSearch, setZipSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [subscribedZones, setSubscribedZones] = useState([]);
@@ -287,9 +288,9 @@ export default function WatchZones() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="flex items-center gap-3 px-4 h-14 max-w-2xl mx-auto">
-          <Link to="/" className="p-1.5 -ml-1.5 hover:bg-muted rounded-lg">
+          <button onClick={() => navigate(-1)} className="p-1.5 -ml-1.5 hover:bg-muted rounded-lg">
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <h1 className="font-heading font-bold text-lg">Neighborhood Watch</h1>
         </div>
       </header>

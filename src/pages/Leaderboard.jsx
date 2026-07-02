@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PullToRefresh from '@/components/PullToRefresh';
 import { ArrowLeft, Trophy, Medal, Award, MapPin, ThumbsUp, CheckCircle, Camera, MessageCircle, Star, Flame, Loader2, Shield, Zap, Heart, Repeat } from 'lucide-react';
 
@@ -21,6 +21,7 @@ const BADGES = [
 ];
 
 export default function Leaderboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState([]);
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,9 +148,9 @@ export default function Leaderboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="flex items-center gap-4 px-4 py-4 bg-card border-b sticky top-0 z-10" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
-        <Link to="/" className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div>
           <h1 className="font-heading font-bold text-lg flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />

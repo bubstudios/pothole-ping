@@ -45,9 +45,9 @@ export default function MyReports() {
   return (
     <div className="min-h-screen bg-background sm:pb-0 pb-14">
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
-        <Link to="/" className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-primary" />
           <h1 className="font-heading font-bold text-lg">My Reports</h1>

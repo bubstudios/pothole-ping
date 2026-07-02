@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Skull, Clock, Flame, AlertTriangle, MapPin } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,6 +28,7 @@ function calcShameScore(pothole) {
 }
 
 export default function HallOfShame() {
+  const navigate = useNavigate();
   const [potholes, setPotholes] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,9 +58,9 @@ export default function HallOfShame() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
-        <Link to="/" className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div className="flex items-center gap-2">
           <Skull className="w-6 h-6 text-red-500" />
           <h1 className="font-heading font-bold text-lg">Hall of Shame</h1>

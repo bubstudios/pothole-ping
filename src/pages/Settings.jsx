@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trash2, Moon, Sun, AlertTriangle, FileText } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -33,9 +34,9 @@ export default function Settings() {
     <div className="min-h-screen bg-background sm:pb-0 pb-14">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
-        <Link to="/" className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <h1 className="font-heading font-bold text-lg">Settings</h1>
       </header>
 

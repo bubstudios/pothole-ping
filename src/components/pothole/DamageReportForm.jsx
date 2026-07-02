@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/ui/mobile-select';
 import { FileUp, Loader2, FileText, Download, Car, X, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -178,16 +178,12 @@ export default function DamageReportForm({ potholeId, reportCreatedDate }) {
             </button>
           </div>
 
-          <Select value={damageType} onValueChange={setDamageType}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Damage type" />
-            </SelectTrigger>
-            <SelectContent className="z-[9999]">
-              {Object.entries(DAMAGE_LABELS).map(([val, label]) => (
-                <SelectItem key={val} value={val}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MobileSelect
+            value={damageType}
+            onValueChange={setDamageType}
+            options={Object.entries(DAMAGE_LABELS).map(([val, label]) => ({ value: val, label }))}
+            placeholder="Damage type"
+          />
 
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>

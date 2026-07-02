@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Camera, Search, Filter, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ const severityBadge = {
 };
 
 export default function PhotoGallery() {
+  const navigate = useNavigate();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -57,9 +58,9 @@ export default function PhotoGallery() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
-        <Link to="/" className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div className="flex items-center gap-2">
           <Camera className="w-5 h-5 text-primary" />
           <h1 className="font-heading font-bold text-lg">Photo Gallery</h1>

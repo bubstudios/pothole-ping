@@ -541,9 +541,9 @@ export default function Home() {
     setSidebarOpen(false);
   };
 
-  const mapFilteredPotholes = potholes.filter((p) => mapStatusFilters[p.status] && mapSeverityFilters[p.severity]);
-  const displayPotholes = potholes.filter((p) => showFixed || p.status !== 'fixed');
-  const filteredPotholes = displayPotholes.filter((p) => {
+  const mapFilteredPotholes = useMemo(() => potholes.filter((p) => mapStatusFilters[p.status] && mapSeverityFilters[p.severity]), [potholes, mapStatusFilters, mapSeverityFilters]);
+  const displayPotholes = useMemo(() => potholes.filter((p) => showFixed || p.status !== 'fixed'), [potholes, showFixed]);
+  const filteredPotholes = useMemo(() => displayPotholes.filter((p) => {
     // Search filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -558,7 +558,7 @@ export default function Home() {
     if (listSortBy === 'oldest') return new Date(a.created_date) - new Date(b.created_date);
     if (listSortBy === 'most_confirmed') return (Number(b.upvotes) || 0) - (Number(a.upvotes) || 0);
     return 0;
-  });
+  }), [displayPotholes, searchQuery, listSeverityFilter, listSortBy]);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">

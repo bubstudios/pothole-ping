@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ const CATEGORIES = [
 const EMPTY_FORM = { name: '', category: 'tire_shop', phone: '', email: '', website: '', address: '', description: '', discount_text: '' };
 
 export default function ManageSponsors() {
+  const navigate = useNavigate();
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -92,9 +93,9 @@ export default function ManageSponsors() {
     <div className="min-h-screen bg-background">
       <header className="flex items-center justify-between px-4 py-3 bg-card border-b sticky top-0 z-10" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <div className="flex items-center gap-3">
-          <Link to="/" className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+          <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <h1 className="font-heading font-bold text-lg">Manage Sponsors</h1>
         </div>
         {!showForm && (
