@@ -9,6 +9,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PullToRefresh from '@/components/PullToRefresh';
+import MobileSelect from '@/components/ui/mobile-select';
 
 // Point-to-segment distance in feet
 function pointToSegmentDist(px, py, x1, y1, x2, y2) {
@@ -312,16 +313,7 @@ export default function CommuteSaver() {
               />
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" />
-                <select
-                  value={form.commute_hour}
-                  onChange={(e) => setForm({ ...form, commute_hour: e.target.value })}
-                  className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                >
-                  <option value="">No pre-trip alert</option>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{String(i % 12 || 12) + ':00 ' + (i < 12 ? 'AM' : 'PM')}</option>
-                  ))}
-                </select>
+                <MobileSelect value={form.commute_hour} onValueChange={(v) => setForm({ ...form, commute_hour: v })} options={[{ value: '', label: 'No pre-trip alert' }, ...Array.from({ length: 24 }, (_, i) => ({ value: String(i), label: String(i % 12 || 12) + ':00 ' + (i < 12 ? 'AM' : 'PM') }))]} placeholder="No pre-trip alert" className="flex-1" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">

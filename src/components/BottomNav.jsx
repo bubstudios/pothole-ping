@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useRef, useEffect } from 'react';
 import { Map, Trophy, Building2, MessageCircle, Menu } from 'lucide-react';
 
 const TABS = [
@@ -9,17 +10,41 @@ const TABS = [
   { path: '/settings', icon: Menu, label: 'More' },
 ];
 
+function findTabRoot(pathname) {
+  for (const t of TABS) {
+    if (t.path === '/') continue;
+    if (pathname === t.path || pathname.startsWith(t.path + '/')) {
+      return t.path;
+    }
+  }
+  return null;
+}
+
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const tabHistoryRef = useRef({});
+
+  useEffect(() => {
+    const pathname = location.pathname;
+    const isRootTab = TABS.some((t) => t.path === pathname);
+    if (!isRootTab) {
+      const tabRoot = findTabRoot(pathname);
+      if (tabRoot) {
+        tabHistoryRef.current[tabRoot] = pathname;
+      }
+    }
+  }, [location.pathname]);
 
   const handleTabClick = (e, path, isActive) => {
     if (isActive) {
       e.preventDefault();
+      delete tabHistoryRef.current[path];
       window.dispatchEvent(new CustomEvent('potholeping-scroll-reset', { detail: { path } }));
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
       navigate(path);
+    } else {
+      navigate(tabHistoryRef.current[path] || path);
     }
   };
 
@@ -28,7 +53,8 @@ export default function BottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', height: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {TABS.map(tab => {
-        const active = location.pathname === tab.path;
+        const active = location.pathname === tab.path ||
+          (tab.path !== '/' && location.pathname.startsWith(tab.path + '/'));
         const Icon = tab.icon;
         return (
           <button

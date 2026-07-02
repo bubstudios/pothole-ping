@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import MobileSelect from '@/components/ui/mobile-select';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import PotholeMap from '@/components/map/PotholeMap';
 import HeatmapLayer from '@/components/map/HeatmapLayer';
@@ -903,18 +904,8 @@ export default function Home() {
                 />
               </div>
               <div className="flex gap-2 text-xs">
-                <select value={listSortBy} onChange={(e) => setListSortBy(e.target.value)} className="flex-1 px-3 py-1.5 border rounded-md bg-background text-foreground">
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="most_confirmed">Most Confirmed</option>
-                </select>
-                <select value={listSeverityFilter} onChange={(e) => setListSeverityFilter(e.target.value)} className="flex-1 px-3 py-1.5 border rounded-md bg-background text-foreground">
-                  <option value="all">All Severities</option>
-                  <option value="minor">Minor</option>
-                  <option value="moderate">Moderate</option>
-                  <option value="severe">Severe</option>
-                  <option value="dangerous">Dangerous</option>
-                </select>
+                <MobileSelect value={listSortBy} onValueChange={setListSortBy} options={[{value:'newest',label:'Newest First'},{value:'oldest',label:'Oldest First'},{value:'most_confirmed',label:'Most Confirmed'}]} placeholder="Sort by" className="flex-1" />
+                <MobileSelect value={listSeverityFilter} onValueChange={setListSeverityFilter} options={[{value:'all',label:'All Severities'},{value:'minor',label:'Minor'},{value:'moderate',label:'Moderate'},{value:'severe',label:'Severe'},{value:'dangerous',label:'Dangerous'}]} placeholder="All Severities" className="flex-1" />
               </div>
             </div>
             <PullToRefresh onRefresh={() => loadPotholes(0)} className="flex-1 overflow-y-auto">

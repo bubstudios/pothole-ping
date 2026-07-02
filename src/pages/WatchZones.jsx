@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import MobileSelect from '@/components/ui/mobile-select';
 import { ArrowLeft, Search, Plus, MessageSquare, Bell, BellOff, ChevronDown, ChevronRight, MapPin, AlertTriangle, MessageCircle } from 'lucide-react';
 import moment from 'moment';
 
@@ -380,25 +381,8 @@ export default function WatchZones() {
                   className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-ring"
                 />
                 <div className="flex items-center gap-2">
-                  <select
-                    value={newPost.type}
-                    onChange={e => setNewPost({ ...newPost, type: e.target.value })}
-                    className="text-xs rounded-md border border-input bg-transparent px-2 py-1.5"
-                  >
-                    <option value="discussion">Discussion</option>
-                    <option value="alert">Alert</option>
-                    <option value="pothole">Pothole</option>
-                  </select>
-                  <select
-                    value={newPost.zoneId}
-                    onChange={e => setNewPost({ ...newPost, zoneId: e.target.value })}
-                    className="text-xs rounded-md border border-input bg-transparent px-2 py-1.5 flex-1"
-                  >
-                    <option value="">Select zone...</option>
-                    {subscribedZones.map(zone => (
-                      <option key={zone.id} value={zone.id}>{zone.zip_code}</option>
-                    ))}
-                  </select>
+                  <MobileSelect value={newPost.type} onValueChange={(v) => setNewPost({ ...newPost, type: v })} options={[{ value: 'discussion', label: 'Discussion' }, { value: 'alert', label: 'Alert' }, { value: 'pothole', label: 'Pothole' }]} placeholder="Type" />
+                  <MobileSelect value={newPost.zoneId} onValueChange={(v) => setNewPost({ ...newPost, zoneId: v })} options={[{ value: '', label: 'Select zone...' }, ...subscribedZones.map(zone => ({ value: zone.id, label: zone.zip_code }))]} placeholder="Select zone..." className="flex-1" />
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleCreatePost}>Post</Button>

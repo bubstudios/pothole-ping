@@ -1,20 +1,21 @@
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, Suspense, lazy } from 'react';
 import BottomNav from './BottomNav';
-import Home from '@/pages/Home';
-import Leaderboard from '@/pages/Leaderboard';
-import HallOfShame from '@/pages/HallOfShame';
-import BureaucracyTracker from '@/pages/BureaucracyTracker';
-import WatchZones from '@/pages/WatchZones';
-import Settings from '@/pages/Settings';
-import ManageSponsors from '@/pages/ManageSponsors';
-import PhotoGallery from '@/pages/PhotoGallery';
-import AnalyticsDashboard from '@/pages/AnalyticsDashboard';
-import CommuteSaver from '@/pages/CommuteSaver';
-import AdminDashboard from '@/pages/AdminDashboard';
-import MyReports from '@/pages/MyReports';
-import StateOfRoads from '@/pages/StateOfRoads';
+
+const Home = lazy(() => import('@/pages/Home'));
+const Leaderboard = lazy(() => import('@/pages/Leaderboard'));
+const HallOfShame = lazy(() => import('@/pages/HallOfShame'));
+const BureaucracyTracker = lazy(() => import('@/pages/BureaucracyTracker'));
+const WatchZones = lazy(() => import('@/pages/WatchZones'));
+const Settings = lazy(() => import('@/pages/Settings'));
+const ManageSponsors = lazy(() => import('@/pages/ManageSponsors'));
+const PhotoGallery = lazy(() => import('@/pages/PhotoGallery'));
+const AnalyticsDashboard = lazy(() => import('@/pages/AnalyticsDashboard'));
+const CommuteSaver = lazy(() => import('@/pages/CommuteSaver'));
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
+const MyReports = lazy(() => import('@/pages/MyReports'));
+const StateOfRoads = lazy(() => import('@/pages/StateOfRoads'));
 
 const TABS = [
   { path: '/', Page: Home },
@@ -36,6 +37,7 @@ export default function AppShell() {
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
   const directionRef = useRef(1);
+  const [mountedTabs, setMountedTabs] = useState(['/']);
 
   useEffect(() => {
     const prevIdx = TABS.findIndex((t) => t.path === prevPathRef.current);
@@ -43,6 +45,12 @@ export default function AppShell() {
     // Forward = moving right in tabs array; Back = moving left
     directionRef.current = currIdx >= prevIdx ? 1 : -1;
     prevPathRef.current = location.pathname;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    setMountedTabs((prev) =>
+      prev.includes(location.pathname) ? prev : [...prev, location.pathname]
+    );
   }, [location.pathname]);
 
   return (
@@ -68,7 +76,9 @@ export default function AppShell() {
             }}
           >
             <div className="h-full overflow-y-auto">
-              <Page />
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>}>
+                {mountedTabs.includes(path) && <Page />}
+              </Suspense>
             </div>
           </motion.div>
         );
