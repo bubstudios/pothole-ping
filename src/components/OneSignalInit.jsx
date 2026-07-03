@@ -8,7 +8,8 @@ export default function OneSignalInit() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    const initOneSignal = () => {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal) => {
       try {
         await OneSignal.init({
@@ -50,6 +51,14 @@ export default function OneSignalInit() {
         });
       } catch (e) {}
     });
+    };
+
+    // Defer OneSignal init until after initial render
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(initOneSignal);
+    } else {
+      setTimeout(initOneSignal, 2000);
+    }
 
     // --- Expose a helper to prompt for push after the user submits their first report ---
     window.__promptPush = () => {

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MobileSelect from '@/components/ui/mobile-select';
+import PullToRefresh from '@/components/PullToRefresh';
 import { ArrowLeft, Search, Plus, MessageSquare, Bell, BellOff, ChevronDown, ChevronRight, MapPin, AlertTriangle, MessageCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -393,6 +394,7 @@ export default function WatchZones() {
             )}
 
             {/* Posts Feed */}
+            <PullToRefresh onRefresh={loadAll}>
             <ScrollArea className="h-[calc(100vh-340px)]">
               {posts.length === 0 ? (
                 <div className="text-center py-10">
@@ -408,6 +410,7 @@ export default function WatchZones() {
                 </div>
               )}
             </ScrollArea>
+            </PullToRefresh>
           </div>
         )}
 

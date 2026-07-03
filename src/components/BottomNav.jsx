@@ -63,6 +63,7 @@ export default function BottomNav() {
             aria-selected={active}
             aria-label={tab.label}
             onClick={(e) => handleTabClick(e, tab.path, active)}
+            style={{ minHeight: '44px' }}
             className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
               active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}

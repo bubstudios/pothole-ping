@@ -55,9 +55,11 @@ export default function FeedbackModal({ open, onClose }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-4 space-y-4">
-            <div className="flex gap-2">
+            <div role="radiogroup" aria-label="Feedback type" className="flex gap-2">
               <button
                 type="button"
+                role="radio"
+                aria-checked={type === 'bug'}
                 onClick={() => setType('bug')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   type === 'bug'
@@ -70,6 +72,8 @@ export default function FeedbackModal({ open, onClose }) {
               </button>
               <button
                 type="button"
+                role="radio"
+                aria-checked={type === 'suggestion'}
                 onClick={() => setType('suggestion')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   type === 'suggestion'

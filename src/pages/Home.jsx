@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import MobileSelect from '@/components/ui/mobile-select';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import PotholeMap from '@/components/map/PotholeMap';
-import HeatmapLayer from '@/components/map/HeatmapLayer';
-import CommuterRouteOverlay from '@/components/map/CommuterRouteOverlay';
-import HeatmapControls from '@/components/map/HeatmapControls';
+const PotholeMap = React.lazy(() => import('@/components/map/PotholeMap'));
+const HeatmapLayer = React.lazy(() => import('@/components/map/HeatmapLayer'));
+const CommuterRouteOverlay = React.lazy(() => import('@/components/map/CommuterRouteOverlay'));
+const HeatmapControls = React.lazy(() => import('@/components/map/HeatmapControls'));
 import ReportForm from '@/components/pothole/ReportForm';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
 import RecentlyFixed from '@/components/pothole/RecentlyFixed';
@@ -817,6 +817,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 flex relative overflow-hidden">
         {view === 'map' && (
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>}>
           <div className="flex-1 relative">
             <ErrorBoundary label="Map" onRetry={() => loadPotholes(0)}>
             <PotholeMap
@@ -949,6 +950,7 @@ export default function Home() {
               </Popover>
             )}
           </div>
+          </Suspense>
         )}
 
         {view === 'list' && (

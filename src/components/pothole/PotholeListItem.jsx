@@ -23,6 +23,7 @@ export default React.memo(function PotholeListItem({ pothole, onClick }) {
   return (
     <button
       onClick={() => onClick(pothole)}
+      aria-label={`View pothole details: ${pothole.address || 'unknown location'} - ${pothole.severity} severity`}
       className={`w-full text-left p-3 rounded-lg border hover:border-primary/30 hover:shadow-sm transition-all group ${
         pothole.status === 'disputed' ? 'bg-purple-50/50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800' :
         stale ? 'bg-amber-50/50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800' :

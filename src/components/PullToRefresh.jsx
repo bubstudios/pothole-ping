@@ -8,7 +8,7 @@ export default function PullToRefresh({ onRefresh, children, className = '' }) {
   const THRESHOLD = 70;
 
   const handleTouchStart = useCallback((e) => {
-    if (containerRef.current && containerRef.current.scrollTop <= 5) {
+    if (containerRef.current && (containerRef.current.scrollTop <= 5 || window.scrollY <= 5)) {
       startY.current = e.touches[0].clientY;
       setPullDist(0);
     }
@@ -42,7 +42,7 @@ export default function PullToRefresh({ onRefresh, children, className = '' }) {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className={`relative ${className}`}
+      className={`relative overscroll-contain ${className}`}
     >
       <div
         className="absolute top-0 left-0 right-0 flex justify-center z-10 pointer-events-none"
