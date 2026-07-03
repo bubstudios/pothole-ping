@@ -16,8 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import MobileSelect from '@/components/ui/mobile-select';
 import ErrorBoundary from '@/components/ErrorBoundary';
 const PotholeMap = React.lazy(() => import('@/components/map/PotholeMap'));
-const HeatmapLayer = React.lazy(() => import('@/components/map/HeatmapLayer'));
-const CommuterRouteOverlay = React.lazy(() => import('@/components/map/CommuterRouteOverlay'));
+import HeatmapLayer from '@/components/map/HeatmapLayer';
+import CommuterRouteOverlay from '@/components/map/CommuterRouteOverlay';
 const HeatmapControls = React.lazy(() => import('@/components/map/HeatmapControls'));
 import ReportForm from '@/components/pothole/ReportForm';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
