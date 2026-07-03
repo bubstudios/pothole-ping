@@ -3,8 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, ThumbsUp, Plus, MapPin } from 'lucide-react';
 
 const severityConfig = {
-  minor: { label: 'Minor', color: 'bg-yellow-100 text-yellow-700' },
-  moderate: { label: 'Moderate', color: 'bg-orange-100 text-orange-700' },
+  minor: { label: 'Minor', color: 'bg-yellow-100 text-yellow-900' },
+  moderate: { label: 'Moderate', color: 'bg-orange-100 text-orange-700 font-semibold' },
   severe: { label: 'Severe', color: 'bg-red-100 text-red-700' },
   dangerous: { label: 'Dangerous', color: 'bg-red-200 text-red-800' },
 };

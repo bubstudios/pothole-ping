@@ -14,8 +14,8 @@ import AdvertiseCTA from '@/components/AdvertiseCTA';
 import { formatDistanceToNow } from 'date-fns';
 
 const severityBadge = {
-  minor: 'bg-yellow-400 text-yellow-900',
-  moderate: 'bg-orange-400 text-orange-900',
+  minor: 'bg-yellow-100 text-yellow-900',
+  moderate: 'bg-orange-400 text-orange-900 font-semibold',
   severe: 'bg-red-400 text-red-900',
   dangerous: 'bg-red-700 text-red-50',
 };

@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import ShareButton from './ShareButton';
 
 const severityDots = {
-  minor: 'bg-yellow-400',
+  minor: 'bg-yellow-100',
   moderate: 'bg-orange-400',
   severe: 'bg-red-400',
   dangerous: 'bg-red-700',

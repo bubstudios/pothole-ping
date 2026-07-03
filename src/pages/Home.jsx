@@ -20,6 +20,8 @@ import HeatmapLayer from '@/components/map/HeatmapLayer';
 import CommuterRouteOverlay from '@/components/map/CommuterRouteOverlay';
 const HeatmapControls = React.lazy(() => import('@/components/map/HeatmapControls'));
 import PotholeListItem from '@/components/pothole/PotholeListItem';
+import PotholeListView from '@/components/pothole/PotholeListView';
+import MapToolbar from '@/components/map/MapToolbar';
 import RecentlyFixed from '@/components/pothole/RecentlyFixed';
 import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
@@ -727,7 +729,7 @@ export default function Home() {
           <div className="sm:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <button aria-label="Open navigation menu" className="p-2 hover:bg-muted rounded-lg transition-colors">
                   <Menu className="w-5 h-5" />
                 </button>
               </DropdownMenuTrigger>
@@ -817,6 +819,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 flex relative overflow-hidden">
         {view === 'map' && (
+          <PullToRefresh onRefresh={() => loadPotholes(0)} className="flex-1 relative">
           <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>}>
           <div className="flex-1 relative">
             <ErrorBoundary label="Map" onRetry={() => loadPotholes(0)}>
@@ -877,143 +880,49 @@ export default function Home() {
               </div>
             )}
 
-            {!sidebarOpen && <SavingsWidget totalSavings={totalSavings} avoidanceCount={avoidanceCount} />}
-            {!sidebarOpen && <SupportButton />}
-            {!sidebarOpen && <HeatmapControls
-              enabled={heatmapEnabled}
-              onToggle={() => setHeatmapEnabled(!heatmapEnabled)}
-              severityFilter={heatmapSeverity}
-              onSeverityChange={setHeatmapSeverity}
-              timeRange={heatmapTimeRange}
-              onTimeRangeChange={setHeatmapTimeRange}
-              hotspotCount={heatmapEnabled ? displayPotholes.filter(p => {
-                if (p.status === 'fixed') return false;
-                if (heatmapSeverity !== 'all' && p.severity !== heatmapSeverity) return false;
-                const timeCutoffs = { week: 7, month: 30, '3months': 90, all: Infinity };
-                const age = (Date.now() - new Date(p.created_date).getTime()) / (24*60*60*1000);
-                return age <= timeCutoffs[heatmapTimeRange];
-              }).length : 0}
-            />}
-            {!sidebarOpen && commuterRouteData && (
-              <button
-                onClick={() => setCommuterRouteData(null)}
-                className="absolute top-4 left-4 z-[1000] px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg bg-green-600 text-white border-green-500 transition-all"
-              >
-                🛣️ Clear Route
-              </button>
-            )}
-            {!sidebarOpen && !commuterRouteData && (
-              <button
-                aria-label={hotZonesEnabled ? 'Hide hot zones' : 'Show hot zones'}
-                onClick={() => setHotZonesEnabled(!hotZonesEnabled)}
-                className={`absolute top-4 left-4 z-[1000] px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg transition-all ${
-                  hotZonesEnabled
-                    ? 'bg-red-600 text-white border-red-500'
-                    : 'bg-card text-muted-foreground border-border hover:bg-muted'
-                }`}
-              >
-                {hotZonesEnabled ? '🔥 Hot Zones ON' : '🔥 Hot Zones'}
-              </button>
-            )}
-            {!sidebarOpen && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button aria-label="Toggle map filters" className="absolute top-4 right-4 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-heading font-semibold border shadow-lg bg-card text-foreground border-border hover:bg-muted transition-colors">
-                    <span className="capitalize">Filters</span>
-                    <span className="text-[10px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                      {mapFilteredPotholes.length}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-3 space-y-3" align="end" sideOffset={8}>
-                  <div>
-                    <p className="text-xs font-heading font-semibold text-muted-foreground mb-1.5">Status</p>
-                    <div className="space-y-0.5">
-                      {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
-                        <label key={status} htmlFor={`filter-status-${status}`} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
-                          <input
-                            id={`filter-status-${status}`}
-                            type="checkbox"
-                            checked={mapStatusFilters[status]}
-                            onChange={(e) => setMapStatusFilters(prev => ({ ...prev, [status]: e.target.checked }))}
-                            className="w-4 h-4 rounded border"
-                          />
-                          <span className="capitalize">{status.replace('_', ' ')}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="border-t pt-2">
-                    <p className="text-xs font-heading font-semibold text-muted-foreground mb-1.5">Severity</p>
-                    <div className="space-y-0.5">
-                      {['minor', 'moderate', 'severe', 'dangerous'].map((severity) => (
-                        <label key={severity} htmlFor={`filter-severity-${severity}`} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
-                          <input
-                            id={`filter-severity-${severity}`}
-                            type="checkbox"
-                            checked={mapSeverityFilters[severity]}
-                            onChange={(e) => setMapSeverityFilters(prev => ({ ...prev, [severity]: e.target.checked }))}
-                            className="w-4 h-4 rounded border"
-                          />
-                          <span className="capitalize">{severity}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
+            <MapToolbar
+              sidebarOpen={sidebarOpen}
+              heatmapEnabled={heatmapEnabled}
+              setHeatmapEnabled={setHeatmapEnabled}
+              heatmapSeverity={heatmapSeverity}
+              setHeatmapSeverity={setHeatmapSeverity}
+              heatmapTimeRange={heatmapTimeRange}
+              setHeatmapTimeRange={setHeatmapTimeRange}
+              displayPotholes={displayPotholes}
+              totalSavings={totalSavings}
+              avoidanceCount={avoidanceCount}
+              commuterRouteData={commuterRouteData}
+              setCommuterRouteData={setCommuterRouteData}
+              hotZonesEnabled={hotZonesEnabled}
+              setHotZonesEnabled={setHotZonesEnabled}
+              mapStatusFilters={mapStatusFilters}
+              setMapStatusFilters={setMapStatusFilters}
+              mapSeverityFilters={mapSeverityFilters}
+              setMapSeverityFilters={setMapSeverityFilters}
+              mapFilteredPotholes={mapFilteredPotholes}
+            />
           </div>
           </Suspense>
+          </PullToRefresh>
         )}
 
         {view === 'list' && (
-          <div className="flex-1 flex flex-col">
-            <div className="p-3 border-b space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by address, city, or description..."
-                  className="pl-9"
-                />
-              </div>
-              <div className="flex gap-2 text-xs">
-                <MobileSelect value={listSortBy} onValueChange={setListSortBy} options={[{value:'newest',label:'Newest First'},{value:'oldest',label:'Oldest First'},{value:'most_confirmed',label:'Most Confirmed'}]} placeholder="Sort by" className="flex-1" />
-                <MobileSelect value={listSeverityFilter} onValueChange={setListSeverityFilter} options={[{value:'all',label:'All Severities'},{value:'minor',label:'Minor'},{value:'moderate',label:'Moderate'},{value:'severe',label:'Severe'},{value:'dangerous',label:'Dangerous'}]} placeholder="All Severities" className="flex-1" />
-              </div>
-            </div>
-            <PullToRefresh onRefresh={() => loadPotholes(0)} className="flex-1 overflow-y-auto">
-              <div className="p-3 space-y-2 pb-14 sm:pb-0">
-                <RecentlyFixed potholes={potholes} />
-                {filteredPotholes.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No potholes found</p>
-                  </div>
-                ) : (
-                  <>
-                    {filteredPotholes.map((p) => (
-                      <PotholeListItem key={p.id} pothole={p} onClick={handlePotholeClick} />
-                    ))}
-                    {hasMorePotholes && (
-                      <button
-                        onClick={() => {
-                          setLoadingMorePotholes(true);
-                          loadPotholes(potholeOffset);
-                        }}
-                        disabled={loadingMorePotholes}
-                        className="w-full py-3 mt-2 text-sm font-medium text-primary hover:bg-muted rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {loadingMorePotholes ? 'Loading...' : 'Load More'}
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </PullToRefresh>
-          </div>
+          <PotholeListView
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            listSortBy={listSortBy}
+            setListSortBy={setListSortBy}
+            listSeverityFilter={listSeverityFilter}
+            setListSeverityFilter={setListSeverityFilter}
+            potholes={potholes}
+            filteredPotholes={filteredPotholes}
+            handlePotholeClick={handlePotholeClick}
+            loadPotholes={loadPotholes}
+            potholeOffset={potholeOffset}
+            hasMorePotholes={hasMorePotholes}
+            loadingMorePotholes={loadingMorePotholes}
+            setLoadingMorePotholes={setLoadingMorePotholes}
+          />
         )}
 
         {sidebarOpen && (isMobile ? (
