@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug, Camera, TrendingUp, Route, FileText, Award } from 'lucide-react';
+import { Plus, List, Map, Search, AlertTriangle, X, Trophy, Skull, Building2, Menu, MessageCircle, Bug, Camera, TrendingUp, Route, FileText, Award, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SupportButton from '@/components/SupportButton';
 import {
@@ -19,12 +19,11 @@ const PotholeMap = React.lazy(() => import('@/components/map/PotholeMap'));
 import HeatmapLayer from '@/components/map/HeatmapLayer';
 import CommuterRouteOverlay from '@/components/map/CommuterRouteOverlay';
 const HeatmapControls = React.lazy(() => import('@/components/map/HeatmapControls'));
-import ReportForm from '@/components/pothole/ReportForm';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
 import RecentlyFixed from '@/components/pothole/RecentlyFixed';
 import VoiceReport from '@/components/pothole/VoiceReport';
 import ProximityAlert from '@/components/pothole/ProximityAlert';
-import DuplicateWarning from '@/components/pothole/DuplicateWarning';
+import ReportSidebarContent from '@/components/pothole/ReportSidebarContent';
 import DelayedReportPrompt from '@/components/pothole/DelayedReportPrompt';
 import FeedbackModal from '@/components/FeedbackModal';
 import PullToRefresh from '@/components/PullToRefresh';
@@ -147,6 +146,7 @@ export default function Home() {
   const [totalSavings, setTotalSavings] = useState(0);
   const [avoidanceCount, setAvoidanceCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [followUser, setFollowUser] = useState(true);
   const [commuterRouteData, setCommuterRouteData] = useState(null);
   const [pendingVoicePins, setPendingVoicePins] = useState(() => {
@@ -227,6 +227,7 @@ export default function Home() {
   };
 
   const loadingPotholesRef = useRef(false);
+  const handleUpvoteRef = useRef(null);
   const lastPotholeLoadRef = useRef(0);
 
   const loadPotholes = async (offset = 0) => {
@@ -277,7 +278,7 @@ export default function Home() {
   };
 
   // Haversine distance in feet
-  const distanceFt = (lat1, lng1, lat2, lng2) => {
+  const distanceFt = useCallback((lat1, lng1, lat2, lng2) => {
     const R = 20903520; // Earth radius in feet
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLng = ((lng2 - lng1) * Math.PI) / 180;
@@ -285,7 +286,7 @@ export default function Home() {
       Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  };
+  }, []);
 
   const DUPE_THRESHOLD_FT = 100;
 
@@ -343,7 +344,7 @@ export default function Home() {
     openReportAt(newPin.lat, newPin.lng);
   }, [newPin, openReportAt]);
 
-  const handleSubmitReport = async ({ description, severity, photo_url }) => {
+  const handleSubmitReport = useCallback(async ({ description, severity, photo_url }) => {
     const report = {
       latitude: newPin.lat,
       longitude: newPin.lng,
@@ -391,9 +392,9 @@ export default function Home() {
         });
       } catch (e) {}
     }
-  };
+  }, [newPin, jurisdictionInfo, currentUser, navigate]);
 
-  const handleCancelReport = () => {
+  const handleCancelReport = useCallback(() => {
     setNewPin(null);
     setPendingVoicePins((prev) => prev.filter((p) => p.lat !== newPin?.lat || p.lng !== newPin?.lng));
     setJurisdictionInfo(null);
@@ -401,15 +402,49 @@ export default function Home() {
     setDuplicateCandidate(null);
     setDuplicatePin(null);
     setSidebarOpen(false);
-  };
+  }, [newPin]);
 
-  const handlePotholeClick = (pothole) => {
+  const handlePotholeClick = useCallback((pothole) => {
     setNewPin(null);
     setIsDropping(false);
     setSidebarOpen(false);
     setFlyToCenter(null);
     setQuickConfirmPothole(pothole);
-  };
+  }, []);
+
+  const handleConfirmDuplicate = useCallback((pothole) => {
+    handleUpvoteRef.current(pothole.id);
+    setDuplicateCandidate(null);
+    setDuplicatePin(null);
+    setSidebarOpen(false);
+    navigate(`/pothole/${pothole.id}`);
+  }, [navigate]);
+
+  const handleReportAnyway = useCallback(() => {
+    const lat = Number(duplicateCandidate.latitude);
+    const lng = Number(duplicateCandidate.longitude);
+    const offset = 0.00015;
+    const pin = { lat: lat + offset, lng: lng + offset };
+    setDuplicateCandidate(null);
+    setDuplicatePin(null);
+    setNewPin(pin);
+    setIsLoadingJurisdiction(true);
+    (async () => {
+      const address = await reverseGeocode(pin.lat, pin.lng);
+      setJurisdictionInfo({ address });
+      try {
+        const info = await lookupJurisdiction(pin.lat, pin.lng, address);
+        setJurisdictionInfo((prev) => ({ ...prev, ...applyJurisdictionOverrides(info) }));
+      } catch (e) {}
+      setIsLoadingJurisdiction(false);
+    })();
+  }, [duplicateCandidate]);
+
+  const handleDismissDuplicate = useCallback(() => {
+    setDuplicateCandidate(null);
+    setDuplicatePin(null);
+    setSidebarOpen(false);
+  }, []);
 
   const handleUpvote = async (id, markFixed = false) => {
     const pothole = potholes.find((p) => p.id === id);
@@ -521,6 +556,7 @@ export default function Home() {
       loadPotholes();
     }
   };
+  handleUpvoteRef.current = handleUpvote;
 
   const handleDelayedPrompt = useCallback((pin) => {
     if (!pin) return;
@@ -564,55 +600,19 @@ export default function Home() {
   }), [displayPotholes, searchQuery, listSeverityFilter, listSortBy]);
 
   const sidebarContent = (
-    <>
-      {duplicateCandidate && !newPin && (
-        <DuplicateWarning
-          candidate={duplicateCandidate}
-          pin={duplicatePin}
-          distanceFt={distanceFt}
-          onConfirm={(pothole) => {
-            handleUpvote(pothole.id);
-            setDuplicateCandidate(null);
-            setDuplicatePin(null);
-            setSidebarOpen(false);
-            navigate(`/pothole/${pothole.id}`);
-          }}
-          onReportAnyway={() => {
-            const lat = Number(duplicateCandidate.latitude);
-            const lng = Number(duplicateCandidate.longitude);
-            const offset = 0.00015;
-            const pin = { lat: lat + offset, lng: lng + offset };
-            setDuplicateCandidate(null);
-            setDuplicatePin(null);
-            setNewPin(pin);
-            setIsLoadingJurisdiction(true);
-            (async () => {
-              const address = await reverseGeocode(pin.lat, pin.lng);
-              setJurisdictionInfo({ address });
-              try {
-                const info = await lookupJurisdiction(pin.lat, pin.lng, address);
-                setJurisdictionInfo((prev) => ({ ...prev, ...applyJurisdictionOverrides(info) }));
-              } catch (e) {}
-              setIsLoadingJurisdiction(false);
-            })();
-          }}
-          onDismiss={() => {
-            setDuplicateCandidate(null);
-            setDuplicatePin(null);
-            setSidebarOpen(false);
-          }}
-        />
-      )}
-      {newPin && !duplicateCandidate && (
-        <ReportForm
-          pin={newPin}
-          jurisdictionInfo={jurisdictionInfo}
-          isLoadingJurisdiction={isLoadingJurisdiction}
-          onSubmit={handleSubmitReport}
-          onCancel={handleCancelReport}
-        />
-      )}
-    </>
+    <ReportSidebarContent
+      duplicateCandidate={duplicateCandidate}
+      duplicatePin={duplicatePin}
+      newPin={newPin}
+      jurisdictionInfo={jurisdictionInfo}
+      isLoadingJurisdiction={isLoadingJurisdiction}
+      distanceFt={distanceFt}
+      onConfirmDuplicate={handleConfirmDuplicate}
+      onReportAnyway={handleReportAnyway}
+      onDismissDuplicate={handleDismissDuplicate}
+      onSubmit={handleSubmitReport}
+      onCancel={handleCancelReport}
+    />
   );
 
   return (
@@ -851,6 +851,18 @@ export default function Home() {
               <CommuterRouteOverlay routeData={commuterRouteData} userPosition={userPosition} followRoute={followUser} />
             </PotholeMap>
             </ErrorBoundary>
+            {!sidebarOpen && (
+              <button
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try { await loadPotholes(0); } finally { setIsRefreshing(false); }
+                }}
+                aria-label="Refresh map"
+                className="absolute top-16 left-4 z-[1000] bg-card border shadow-lg rounded-full w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            )}
             {dangerNearby && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none">
                 <div className="bg-red-600/90 text-white rounded-2xl px-5 py-3 shadow-2xl animate-pulse flex items-center gap-3 backdrop-blur">
@@ -918,8 +930,9 @@ export default function Home() {
                     <p className="text-xs font-heading font-semibold text-muted-foreground mb-1.5">Status</p>
                     <div className="space-y-0.5">
                       {['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'].map((status) => (
-                        <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
+                        <label key={status} htmlFor={`filter-status-${status}`} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
                           <input
+                            id={`filter-status-${status}`}
                             type="checkbox"
                             checked={mapStatusFilters[status]}
                             onChange={(e) => setMapStatusFilters(prev => ({ ...prev, [status]: e.target.checked }))}
@@ -934,8 +947,9 @@ export default function Home() {
                     <p className="text-xs font-heading font-semibold text-muted-foreground mb-1.5">Severity</p>
                     <div className="space-y-0.5">
                       {['minor', 'moderate', 'severe', 'dangerous'].map((severity) => (
-                        <label key={severity} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
+                        <label key={severity} htmlFor={`filter-severity-${severity}`} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted p-1.5 rounded transition-colors">
                           <input
+                            id={`filter-severity-${severity}`}
                             type="checkbox"
                             checked={mapSeverityFilters[severity]}
                             onChange={(e) => setMapSeverityFilters(prev => ({ ...prev, [severity]: e.target.checked }))}
