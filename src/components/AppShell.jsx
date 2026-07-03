@@ -78,7 +78,7 @@ export default function AppShell() {
               zIndex: active ? 10 : 0,
             }}
           >
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
               <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>}>
                 {mountedTabs.includes(path) && <Page />}
               </Suspense>

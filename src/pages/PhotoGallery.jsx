@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Camera, Search, Filter, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import PullToRefresh from '@/components/PullToRefresh';
 import { formatDistanceToNow } from 'date-fns';
 
 const severityBadge = {
@@ -94,6 +95,7 @@ export default function PhotoGallery() {
         </div>
       </div>
 
+      <PullToRefresh onRefresh={loadPhotos} className="overflow-y-auto">
       <div className="max-w-4xl mx-auto p-4 pb-20 sm:pb-4">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -142,6 +144,7 @@ export default function PhotoGallery() {
           </div>
         )}
       </div>
+      </PullToRefresh>
     </div>
   );
 }

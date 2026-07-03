@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Skull, Clock, Flame, AlertTriangle, MapPin } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import PullToRefresh from '@/components/PullToRefresh';
 import { Badge } from '@/components/ui/badge';
 import { differenceInDays } from 'date-fns';
 
@@ -67,7 +67,7 @@ export default function HallOfShame() {
         </div>
       </header>
 
-      <ScrollArea className="h-[calc(100vh-57px)]">
+      <PullToRefresh onRefresh={loadData} className="h-[calc(100vh-57px)] overflow-y-auto">
         <div className="max-w-2xl mx-auto p-4 pb-20 sm:pb-4 space-y-3">
           {potholes.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
@@ -144,7 +144,7 @@ export default function HallOfShame() {
             </>
           )}
         </div>
-      </ScrollArea>
+      </PullToRefresh>
     </div>
   );
 }

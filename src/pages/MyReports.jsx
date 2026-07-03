@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, FileText } from 'lucide-react';
 import PotholeListItem from '@/components/pothole/PotholeListItem';
+import PullToRefresh from '@/components/PullToRefresh';
 import { Loader2 } from 'lucide-react';
 
 const STATUS_LABELS = {
@@ -54,6 +55,7 @@ export default function MyReports() {
         </div>
       </header>
 
+      <PullToRefresh onRefresh={loadReports} className="overflow-y-auto">
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         {loading ? (
           <div className="flex justify-center py-12">
@@ -83,6 +85,7 @@ export default function MyReports() {
           </>
         )}
       </div>
+      </PullToRefresh>
     </div>
   );
 }

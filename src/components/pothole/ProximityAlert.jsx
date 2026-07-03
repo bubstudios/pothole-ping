@@ -150,11 +150,11 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
       </button>
 
       {isActive && geoError && (
-        <span className="text-xs text-red-500 hidden sm:inline">{geoError}</span>
+        <span className="text-xs text-red-500">{geoError}</span>
       )}
 
       {isActive && !userLocation && !geoError && (
-        <span className="text-xs text-muted-foreground hidden sm:inline animate-pulse">
+        <span className="text-xs text-muted-foreground animate-pulse">
           Getting location...
         </span>
       )}

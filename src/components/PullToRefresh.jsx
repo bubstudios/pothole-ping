@@ -8,7 +8,8 @@ export default function PullToRefresh({ onRefresh, children, className = '' }) {
   const THRESHOLD = 70;
 
   const handleTouchStart = useCallback((e) => {
-    if (containerRef.current && (containerRef.current.scrollTop <= 5 || window.scrollY <= 5)) {
+    const scrollTop = containerRef.current ? containerRef.current.scrollTop : 0;
+    if (scrollTop <= 5 || window.scrollY <= 5) {
       startY.current = e.touches[0].clientY;
       setPullDist(0);
     }
