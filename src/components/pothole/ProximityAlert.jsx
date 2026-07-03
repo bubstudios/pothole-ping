@@ -135,6 +135,7 @@ export default function ProximityAlert({ potholes = [], isActive, onToggle, onLo
             : 'text-muted-foreground border-border hover:bg-muted'
         }`}
         title={isActive ? 'Proximity alerts active' : 'Enable proximity alerts'}
+        aria-label={isActive ? 'Proximity alerts active' : 'Enable proximity alerts'}
       >
         {isActive ? (
           <Bell className="w-3.5 h-3.5" />

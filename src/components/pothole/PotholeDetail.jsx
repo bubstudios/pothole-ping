@@ -158,14 +158,14 @@ export default function PotholeDetail({ pothole, currentUserId, onBack, onUpvote
       )}
 
       {pothole.status === 'disputed' && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
+        <div className="bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 rounded-lg p-3 text-sm text-purple-800 dark:text-purple-200">
           <p className="font-medium flex items-center gap-1"><Zap className="w-4 h-4" /> Disputed</p>
           <p className="text-xs mt-1">Someone reported this pothole still exists after being marked fixed. The community is split — please verify in person.</p>
         </div>
       )}
 
       {isStale(pothole) && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+        <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-200">
           <p className="font-medium">⚠️ Confirmation Decayed</p>
           <p className="text-xs mt-1">No one has confirmed this report in over 30 days. Please verify and confirm if it still exists.</p>
         </div>

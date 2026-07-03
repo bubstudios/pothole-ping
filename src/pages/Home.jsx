@@ -31,6 +31,8 @@ import PullToRefresh from '@/components/PullToRefresh';
 import SavingsWidget, { SEVERITY_COSTS } from '@/components/pothole/SavingsWidget';
 import OnboardingTour from '@/components/OnboardingTour';
 import QuickConfirmSheet from '@/components/pothole/QuickConfirmSheet';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/components/ui/use-toast';
 
 // Verified jurisdiction contact overrides — applied after LLM lookup
@@ -99,6 +101,7 @@ async function lookupJurisdiction(lat, lng, address) {
 
 export default function Home() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [potholes, setPotholes] = useState([]);
   const [potholeOffset, setPotholeOffset] = useState(0);
   const [hasMorePotholes, setHasMorePotholes] = useState(true);
@@ -560,6 +563,58 @@ export default function Home() {
     return 0;
   }), [displayPotholes, searchQuery, listSeverityFilter, listSortBy]);
 
+  const sidebarContent = (
+    <>
+      {duplicateCandidate && !newPin && (
+        <DuplicateWarning
+          candidate={duplicateCandidate}
+          pin={duplicatePin}
+          distanceFt={distanceFt}
+          onConfirm={(pothole) => {
+            handleUpvote(pothole.id);
+            setDuplicateCandidate(null);
+            setDuplicatePin(null);
+            setSidebarOpen(false);
+            navigate(`/pothole/${pothole.id}`);
+          }}
+          onReportAnyway={() => {
+            const lat = Number(duplicateCandidate.latitude);
+            const lng = Number(duplicateCandidate.longitude);
+            const offset = 0.00015;
+            const pin = { lat: lat + offset, lng: lng + offset };
+            setDuplicateCandidate(null);
+            setDuplicatePin(null);
+            setNewPin(pin);
+            setIsLoadingJurisdiction(true);
+            (async () => {
+              const address = await reverseGeocode(pin.lat, pin.lng);
+              setJurisdictionInfo({ address });
+              try {
+                const info = await lookupJurisdiction(pin.lat, pin.lng, address);
+                setJurisdictionInfo((prev) => ({ ...prev, ...applyJurisdictionOverrides(info) }));
+              } catch (e) {}
+              setIsLoadingJurisdiction(false);
+            })();
+          }}
+          onDismiss={() => {
+            setDuplicateCandidate(null);
+            setDuplicatePin(null);
+            setSidebarOpen(false);
+          }}
+        />
+      )}
+      {newPin && !duplicateCandidate && (
+        <ReportForm
+          pin={newPin}
+          jurisdictionInfo={jurisdictionInfo}
+          isLoadingJurisdiction={isLoadingJurisdiction}
+          onSubmit={handleSubmitReport}
+          onCancel={handleCancelReport}
+        />
+      )}
+    </>
+  );
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
@@ -945,7 +1000,18 @@ export default function Home() {
           </div>
         )}
 
-        {sidebarOpen && (
+        {sidebarOpen && (isMobile ? (
+          <Drawer open={sidebarOpen} onOpenChange={(open) => !open && handleCancelReport()}>
+            <DrawerContent>
+              <DrawerHeader className="text-left">
+                <DrawerTitle>{newPin ? 'New Report' : 'Pothole Details'}</DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-4 overflow-y-auto max-h-[60vh]">
+                {sidebarContent}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
           <div className="absolute sm:relative right-0 top-0 bottom-0 w-full sm:w-[380px] bg-card border-l z-[500] flex flex-col shadow-xl sm:shadow-none">
             <div className="flex items-center justify-between p-3 border-b">
               <h3 className="font-heading font-semibold text-sm">
@@ -956,6 +1022,7 @@ export default function Home() {
                   setSidebarOpen(false);
                   if (newPin) handleCancelReport();
                 }}
+                aria-label="Close sidebar"
                 className="p-1 hover:bg-muted rounded"
               >
                 <X className="w-4 h-4" />
@@ -963,57 +1030,11 @@ export default function Home() {
             </div>
             <div className="flex-1 overflow-y-auto">
               <div className="p-4">
-                {duplicateCandidate && !newPin && (
-                  <DuplicateWarning
-                    candidate={duplicateCandidate}
-                    pin={duplicatePin}
-                    distanceFt={distanceFt}
-                    onConfirm={(pothole) => {
-                      handleUpvote(pothole.id);
-                      setDuplicateCandidate(null);
-                      setDuplicatePin(null);
-                      setSidebarOpen(false);
-                      navigate(`/pothole/${pothole.id}`);
-                    }}
-                    onReportAnyway={() => {
-                      const lat = Number(duplicateCandidate.latitude);
-                      const lng = Number(duplicateCandidate.longitude);
-                      const offset = 0.00015;
-                      const pin = { lat: lat + offset, lng: lng + offset };
-                      setDuplicateCandidate(null);
-                      setDuplicatePin(null);
-                      setNewPin(pin);
-                      setIsLoadingJurisdiction(true);
-                      (async () => {
-                        const address = await reverseGeocode(pin.lat, pin.lng);
-                        setJurisdictionInfo({ address });
-                        try {
-                          const info = await lookupJurisdiction(pin.lat, pin.lng, address);
-                          setJurisdictionInfo((prev) => ({ ...prev, ...applyJurisdictionOverrides(info) }));
-                        } catch (e) {}
-                        setIsLoadingJurisdiction(false);
-                      })();
-                    }}
-                    onDismiss={() => {
-                      setDuplicateCandidate(null);
-                      setDuplicatePin(null);
-                      setSidebarOpen(false);
-                    }}
-                  />
-                )}
-                {newPin && !duplicateCandidate && (
-                  <ReportForm
-                    pin={newPin}
-                    jurisdictionInfo={jurisdictionInfo}
-                    isLoadingJurisdiction={isLoadingJurisdiction}
-                    onSubmit={handleSubmitReport}
-                    onCancel={handleCancelReport}
-                  />
-                )}
+                {sidebarContent}
               </div>
             </div>
           </div>
-        )}
+        ))}
       </div>
 
       {!sidebarOpen && (

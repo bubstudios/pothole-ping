@@ -24,8 +24,8 @@ export default React.memo(function PotholeListItem({ pothole, onClick }) {
     <button
       onClick={() => onClick(pothole)}
       className={`w-full text-left p-3 rounded-lg border hover:border-primary/30 hover:shadow-sm transition-all group ${
-        pothole.status === 'disputed' ? 'bg-purple-50/50 border-purple-200' :
-        stale ? 'bg-amber-50/50 border-amber-200' :
+        pothole.status === 'disputed' ? 'bg-purple-50/50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800' :
+        stale ? 'bg-amber-50/50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800' :
         'bg-card'
       }`}
     >
