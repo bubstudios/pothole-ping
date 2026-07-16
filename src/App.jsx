@@ -16,6 +16,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import PotholeDetailPage from '@/pages/PotholeDetailPage';
 import PublicMap from '@/pages/PublicMap';
 import Donate from '@/pages/Donate';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import OneSignalInit from '@/components/OneSignalInit';
 
@@ -74,6 +75,7 @@ const AuthenticatedApp = () => {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/map" element={<PublicMap />} />
             <Route path="/donate" element={<Donate />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
               <Route path="/pothole/:id" element={<PotholeDetailPage />} />
               <Route path="/*" element={<AppShell />} />

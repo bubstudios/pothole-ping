@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2, Moon, Sun, AlertTriangle, FileText } from 'lucide-react';
+import { ArrowLeft, Trash2, Moon, Sun, AlertTriangle, FileText, Shield } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export default function Settings() {
@@ -47,6 +47,15 @@ export default function Settings() {
           <div>
             <p className="font-medium text-sm">My Reports</p>
             <p className="text-xs text-muted-foreground">Track your reported potholes</p>
+          </div>
+        </Link>
+
+        {/* Privacy Policy */}
+        <Link to="/privacy" className="bg-card rounded-xl border p-4 flex items-center gap-3 hover:border-primary/30 transition-colors">
+          <Shield className="w-5 h-5 text-primary" />
+          <div>
+            <p className="font-medium text-sm">Privacy Policy</p>
+            <p className="text-xs text-muted-foreground">How we handle your data</p>
           </div>
         </Link>
 
