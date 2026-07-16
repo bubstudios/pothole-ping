@@ -19,12 +19,7 @@ import Donate from '@/pages/Donate';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import OneSignalInit from '@/components/OneSignalInit';
-
-const pageVariants = {
-  initial: { x: '100%', opacity: 0 },
-  animate: { x: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  exit: { x: '-30%', opacity: 0, transition: { duration: 0.15 } },
-};
+import { pageVariants } from '@/lib/pageVariants';
 
 const STANDALONE_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/map', '/donate'];
 

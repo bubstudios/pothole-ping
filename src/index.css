@@ -105,6 +105,18 @@
     user-select: text;
   }
 
+  /* Allow text selection in content: paragraphs, comments, descriptions, jurisdiction info */
+  p, li, blockquote, .prose {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Keep buttons, navigation, and layout controls non-selectable */
+  button, [role="button"], nav, header, .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   /* Minimum touch target height for mobile accessibility */
   button, [role="button"], input, select, textarea, .clickable {
     min-height: 44px;

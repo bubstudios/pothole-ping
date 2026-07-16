@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import PullToRefresh from '@/components/PullToRefresh';
 import { formatDistanceToNow } from 'date-fns';
+import { motion } from 'framer-motion';
+import { pageVariants } from '@/lib/pageVariants';
 
 const severityBadge = {
   minor: 'bg-yellow-400 text-yellow-900',
@@ -57,7 +59,7 @@ export default function PhotoGallery() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
@@ -145,6 +147,6 @@ export default function PhotoGallery() {
         )}
       </div>
       </PullToRefresh>
-    </div>
+    </motion.div>
   );
 }

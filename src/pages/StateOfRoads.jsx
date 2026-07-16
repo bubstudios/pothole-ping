@@ -5,6 +5,8 @@ import { ArrowLeft, Award, Share2, Check, TrendingDown, Clock, AlertTriangle, Lo
 import { Button } from '@/components/ui/button';
 import PullToRefresh from '@/components/PullToRefresh';
 import { differenceInDays, format, isAfter, isEqual, startOfMonth } from 'date-fns';
+import { motion } from 'framer-motion';
+import { pageVariants } from '@/lib/pageVariants';
 
 const STATUS_ORDER = ['reported', 'acknowledged', 'in_progress', 'fixed', 'disputed'];
 
@@ -124,7 +126,7 @@ export default function StateOfRoads() {
   const worst = jurisdictions[jurisdictions.length - 1];
 
   return (
-    <div className="min-h-screen bg-background sm:pb-0 pb-14">
+    <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="min-h-screen bg-background sm:pb-0 pb-14">
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center justify-between" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-muted rounded-lg transition-colors">
@@ -204,6 +206,6 @@ export default function StateOfRoads() {
         )}
       </div>
       </PullToRefresh>
-    </div>
+    </motion.div>
   );
 }
