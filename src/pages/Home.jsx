@@ -821,7 +821,7 @@ export default function Home() {
         {view === 'map' && (
           <PullToRefresh onRefresh={() => loadPotholes(0)} className="flex-1 relative">
           <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>}>
-          <div className="flex-1 relative">
+          <div className="h-full relative">
             <ErrorBoundary label="Map" onRetry={() => loadPotholes(0)}>
             <PotholeMap
               potholes={mapFilteredPotholes}
